@@ -132,3 +132,15 @@ and live experimental runs.
 with mock providers. It verifies that entity and relationship graph nodes link
 directly to their originating page numbers (e.g. Page 2 for GraphRAG) and character
 offsets, and verifies full JSON serialization.
+
+## Stage 2, live smoke test: Komarov et al. (2026) verification
+
+Executed on 2026-11-18 against the live official OpenAI API.
+- **Target Document**: `data/papers/komarov_2026_ragu.pdf` (10 pages, 54 chunks, document ID: `922a692238adfe2db666bb65`, SHA-256: `7cc09c9f3555ad4140464e69f407608b73ee5755354a04d9c0a964efae48e404`).
+- **Dense Embeddings**: `text-embedding-3-large`, 54/54 vectors generated. Every returned vector was verified to have exactly **3,072 dimensions**.
+- **Extraction Model**: `gpt-6-luna` using Pydantic structured outputs via `beta.chat.completions.parse`.
+- **Entities Extracted**: 785 total mentions across 54 chunks, merged into **528 unique entities** in the NetworkX graph.
+- **Relationships Extracted**: 639 relationship claims across 54 chunks, filtered to **92 explicit directed edges** between confirmed grounded entities.
+- **Error Count**: 0 errors. All 54 chunks processed successfully without retries.
+- **Financial Cost**: Total execution cost was **$0.049618 USD**, well within the user-approved $0.10 USD budget cap.
+- **Artifact**: Full machine-readable record saved to `results/live_smoke_test_ragu.json`.
