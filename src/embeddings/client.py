@@ -27,11 +27,18 @@ class OpenAIEmbeddingProvider:
                 raise RuntimeError("OpenAI embeddings require the 'openai' package.") from error
             client = async_openai(api_key=api_key, base_url=base_url)
         self._client = client
+        self.last_usage: dict[str, int] | None = None
 
     async def embed(self, texts: list[str], *, model: str) -> list[list[float]]:
         if not texts:
             return []
         response = await self._client.embeddings.create(model=model, input=texts)
+        usage = getattr(response, "usage", None)
+        if usage is not None:
+            self.last_usage = {
+                "prompt_tokens": int(getattr(usage, "prompt_tokens", 0)),
+                "total_tokens": int(getattr(usage, "total_tokens", 0)),
+            }
         return [list(item.embedding) for item in response.data]
 
 

@@ -3,3 +3,4 @@ pypdf>=5.0,<6
 openai>=2.32.0,<3
 pydantic>=2.11,<3
 networkx>=3.4,<4
+numpy>=2.0,<3

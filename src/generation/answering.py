@@ -39,6 +39,7 @@ class OpenAIStructuredAnswerProvider:
                 raise RuntimeError("OpenAI answer generation requires the 'openai' package.") from error
             client = async_openai(api_key=api_key, base_url=base_url)
         self._client = client
+        self.last_usage: dict[str, int] | None = None
 
     async def generate(
         self,
@@ -52,6 +53,13 @@ class OpenAIStructuredAnswerProvider:
             messages=messages,
             response_format=schema,
         )
+        usage = getattr(response, "usage", None)
+        if usage is not None:
+            self.last_usage = {
+                "prompt_tokens": int(getattr(usage, "prompt_tokens", 0)),
+                "completion_tokens": int(getattr(usage, "completion_tokens", 0)),
+                "total_tokens": int(getattr(usage, "total_tokens", 0)),
+            }
         parsed = response.choices[0].message.parsed
         if parsed is None:
             raise ValueError("OpenAI declined to return a structured answer")

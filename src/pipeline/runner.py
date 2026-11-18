@@ -6,6 +6,7 @@ import argparse
 import asyncio
 import json
 import os
+import sys
 from dataclasses import asdict, dataclass, field
 from pathlib import Path
 from time import perf_counter
@@ -20,6 +21,18 @@ from src.knowledge.extraction import ChunkExtraction, SemanticExtractor, Structu
 from src.knowledge.graph import KnowledgeGraph
 from src.knowledge.schemas import ExtractionResult
 from src.processing.chunking import ChunkingConfig, chunk_document
+
+
+def load_dotenv_if_present(env_path: str | Path = ".env") -> None:
+    """Populate os.environ from a local .env file without overwriting existing env vars."""
+    path = Path(env_path)
+    if not path.is_file():
+        return
+    for raw_line in path.read_text(encoding="utf-8").splitlines():
+        line = raw_line.strip()
+        if line and not line.startswith("#") and "=" in line:
+            key, value = line.split("=", 1)
+            os.environ.setdefault(key.strip(), value.strip())
 
 
 @dataclass(frozen=True)
@@ -154,6 +167,7 @@ class DocumentProcessingPipeline:
         extraction_provider: StructuredExtractionProvider | None = None,
         is_mocked: bool = False,
     ) -> "DocumentProcessingPipeline":
+        load_dotenv_if_present()
         embedding_client = EmbeddingClient.from_environment(embedding_provider)
         extractor = SemanticExtractor.from_environment(extraction_provider)
         return cls(
@@ -195,14 +209,20 @@ class DocumentProcessingPipeline:
             )
 
         # 2. Embed and index all chunks
+        if not self.is_mocked:
+            print(f"  [1/2] Generating embeddings for {len(all_chunks)} chunks using {self.embedding_client.model_id}...")
         await self.retriever.index_chunks(all_chunks)
 
         # 3. Extract knowledge from chunks and build knowledge graph
+        if not self.is_mocked:
+            print(f"  [2/2] Extracting semantic entities and relationships using {self.extractor.model_id}...")
         all_extractions: list[ChunkExtraction] = []
-        for chunk in all_chunks:
+        for idx, chunk in enumerate(all_chunks, 1):
             extraction = await self.extractor.extract_chunk(chunk)
             all_extractions.append(extraction)
             self.knowledge_graph.add_extraction(extraction)
+            if not self.is_mocked and (idx % 10 == 0 or idx == len(all_chunks)):
+                print(f"        Progress: {idx}/{len(all_chunks)} chunks processed...")
 
         elapsed_ms = (perf_counter() - started) * 1_000
 
@@ -242,18 +262,40 @@ class DocumentProcessingPipeline:
 
 
 def _cli() -> None:
+    load_dotenv_if_present()
     parser = argparse.ArgumentParser(description="Verifiable Semantic RAG document processing pipeline")
-    parser.add_argument("--papers", nargs="+", help="Paths to PDF/TXT/MD documents to process", required=True)
+    parser.add_argument("--papers", nargs="+", help="Paths to PDF/TXT/MD documents to process")
+    parser.add_argument("--save-artifacts", help="Directory path to save processed artifacts (JSON + NumPy vectors)")
+    parser.add_argument("--load-artifacts", help="Directory path to load pre-processed artifacts from disk")
     parser.add_argument("--output-summary", help="Path to write the output JSON summary", default="results/pipeline_summary.json")
     parser.add_argument("--estimate-cost", action="store_true", help="Estimate tokens and API cost without running extraction")
     parser.add_argument("--mock", action="store_true", help="Run with mock providers (zero API cost, synthetic responses)")
     args = parser.parse_args()
 
+    from src.storage.artifacts import load_artifacts, save_artifacts
+
+    if args.load_artifacts:
+        artifact_path = Path(args.load_artifacts).resolve()
+        if not artifact_path.is_dir():
+            print(f"Error: artifact directory not found: {artifact_path}")
+            sys.exit(1)
+        print(f"Loading artifacts from: {artifact_path}...")
+        artifacts = load_artifacts(artifact_path)
+        print(f"Loaded successfully: {artifacts.summary.document_count} docs, {artifacts.summary.page_count} pages, {artifacts.summary.chunk_count} chunks")
+        print(f"Graph: {artifacts.summary.unique_entity_count} unique entities, {artifacts.summary.explicit_relationship_count} explicit edges")
+        if args.output_summary:
+            artifacts.summary.save(args.output_summary)
+            print(f"Summary saved to: {args.output_summary}")
+        return
+
+    if not args.papers:
+        parser.error("Either --papers or --load-artifacts must be provided.")
+
     paper_paths = [Path(p).resolve() for p in args.papers]
     for p in paper_paths:
         if not p.is_file():
             print(f"Error: file not found: {p}")
-            return
+            sys.exit(1)
 
     if args.estimate_cost:
         print(f"Ingesting {len(paper_paths)} documents for cost estimation...")
@@ -276,7 +318,6 @@ def _cli() -> None:
     if args.mock:
         class _MockEmbeddingProvider:
             async def embed(self, texts: list[str], *, model: str) -> list[list[float]]:
-                # Return dummy unit vector
                 return [[1.0] + [0.0] * 3071 for _ in texts]
 
         class _MockExtractionProvider:
@@ -300,6 +341,10 @@ def _cli() -> None:
     if args.output_summary:
         artifacts.summary.save(args.output_summary)
         print(f"Summary saved to: {args.output_summary}")
+
+    if args.save_artifacts:
+        saved_path = save_artifacts(artifacts, args.save_artifacts)
+        print(f"Artifacts saved to: {saved_path}")
 
 
 if __name__ == "__main__":

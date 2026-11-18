@@ -188,8 +188,93 @@ JSON summary output (`QAPipelineSummary`).
 
 ### Verification
 `tests/test_hybrid_retrieval_and_answering.py` adds 6 unit and integration tests
-using mocked providers (bringing the total suite to **27 passing tests**). It
-verifies vector+graph merging, chunk deduplication, multi-hop traversal depth
-configuration, authoritative provenance overwriting, rejection of fabricated
-chunk IDs and quotes, fail-closed insufficient-evidence handling, and end-to-end
-mock QA execution on `tests/fixtures/sample_article.pdf`.
+using mocked providers (bringing the total suite to **27 passing tests**).
+
+## Stage 2, vertical slice 6: persistent research artifacts
+
+Implemented on 2026-11-18 without paid API calls.
+
+### Storage Architecture (`src/storage/artifacts.py`)
+To prevent repeated expensive embedding and semantic extraction calls, `save_artifacts`
+and `load_artifacts` provide atomic, portable serialization using JSON and NumPy:
+- `manifest.json`: Stores `schema_version` (`"1.0.0"`), creation timestamp, document
+  counts, chunk counts, entity/relationship statistics, embedding model ID, dimensions,
+  LLM model ID, `is_mocked` flag, per-document metrics, and SHA-256 hashes of all files.
+- `documents.json`: Full `SourceDocument` records with sections, page numbers, and checksums.
+- `chunks.json`: Full `TextChunk` records with deterministic chunk IDs and character offsets.
+- `extractions.json`: Full `ChunkExtraction` records with entities, evidence quotations,
+  and support levels (`explicit`, `uncertain`, `inferred`).
+- `vectors.npz`: Compressed NumPy archive containing `vectors` (`float32` 2D array)
+  and `chunk_ids` (Unicode string array). Python pickle is strictly disabled (`allow_pickle=False`).
+
+### Atomic Writes & Integrity Guarantees
+1. **Atomic Staging**: Artifacts are assembled in an isolated sibling directory
+   (`.tmp_<dir>_<id>`) and swapped atomically upon completion to avoid partial writes.
+2. **Integrity Validation**: On load, `load_artifacts` recomputes SHA-256 hashes of
+   `documents.json`, `chunks.json`, `extractions.json`, and `vectors.npz` against
+   `manifest.json`, failing fast on any file corruption or manual tampering.
+3. **Model & Dimension Validation**: Loading checks `embedding_dimension` and
+   `embedding_model` against expected values, preventing cross-model vector contamination.
+4. **Offline Safety Guard**: `load_artifacts` equips `SemanticRetriever` with an
+   `OfflineEmbeddingProvider` by default, guaranteeing that loading artifacts can never
+   trigger unexpected paid embedding calls.
+
+### CLI Integration
+- `scripts/process_papers.py --save-artifacts <dir>`: Saves pipeline outputs to disk.
+- `scripts/process_papers.py --load-artifacts <dir>`: Reconstructs the index and graph
+  without re-running ingestion or API calls.
+- `scripts/answer_question.py --load-artifacts <dir> --question "..."`: Reconstructs
+  the vector index and knowledge graph from disk, evaluates hybrid retrieval, and
+  answers questions while embedding only the single short query string.
+
+### Limitations of Current In-Memory Reconstruction
+While serialization allows complete offline persistence, `load_artifacts` reconstitutes
+the vector embeddings into Python RAM (`InMemoryVectorIndex`) and the knowledge graph
+into a NetworkX graph structure. For our 3-paper development corpus (262 chunks), RAM
+footprint is negligible (< 2 MB) and query retrieval completes in milliseconds. For
+large-scale benchmark evaluation (e.g. GraphRAG-Bench with > 50,000 chunks), a dedicated
+persistent vector database (e.g. SQLite/DuckDB, FAISS, or Qdrant) may be evaluated.
+
+### Verification
+`tests/test_storage_artifacts.py` adds 5 tests verifying save/reload round-trip,
+chunk/page provenance retention, vector dimension and value preservation, knowledge
+graph reconstruction, SHA-256 tampering rejection, model/dimension mismatch rejection,
+and offline question-answering.
+Total test suite now comprises **32 passing unit and integration tests**.
+
+## Stage 2, live persisted run (Run 2): Komarov et al. (2026) artifact generation
+
+Because the initial live smoke test (Run 1, `results/live_smoke_test_ragu.json`) was
+executed prior to Slice 6 persistence and only wrote aggregate metrics before its
+Python process exited, an independent second live processing run was executed on
+2026-11-18 (`created_at: 2026-11-18T14:46:26.795134+00:00`) using `--save-artifacts`:
+
+```powershell
+python scripts/process_papers.py --papers data/papers/komarov_2026_ragu.pdf --save-artifacts data/processed/komarov_2026_ragu --output-summary results/live_ragu_persisted_summary.json
+```
+
+### Recorded Measurements (Run 2 vs. Historical Run 1)
+This run is recorded separately from Run 1 (`results/live_smoke_test_ragu.json`, which
+remains untouched):
+- **Target Document**: `data/papers/komarov_2026_ragu.pdf` (10 pages, 54 chunks,
+  `document_id`: `922a692238adfe2db666bb65`, SHA-256: `7cc09c9f3555ad4140464e69f407608b73ee5755354a04d9c0a964efae48e404`).
+- **Dense Embeddings**: `text-embedding-3-large`, 54/54 vectors persisted in
+  `data/processed/komarov_2026_ragu/vectors.npz`, all verified at **3,072 dimensions**.
+- **Extraction Model**: `gpt-6-luna` via `beta.chat.completions.parse`.
+- **Entities Extracted**: **741 total entity mentions** across 54 chunks, merged into
+  **491 unique entities** in the reconstructed NetworkX graph (compared with 785 mentions /
+  528 unique entities in Run 1 due to natural LLM sampling variance across 54 calls).
+- **Relationships Extracted**: **595 relationship claims** across 54 chunks, filtered by
+  verbatim quote and entity-endpoint grounding to **80 explicit directed edges** (compared
+  with 639 claims / 92 explicit edges in Run 1).
+- **Execution Time**: `1,247,197.133 ms` (~20.79 minutes).
+- **Estimated Spend**: ~$0.0496 USD ($0.001622 embeddings + ~$0.0480 extraction).
+- **Persisted Artifacts & SHA-256 Checksums (`data/processed/komarov_2026_ragu/`)**:
+  - `manifest.json` (`schema_version: 1.0.0`, `is_mocked: false`)
+  - `documents.json`: `dfce68695260f237a5f2fddc99a8c8afbe69d4c56d9298a180dad72137a3eb84`
+  - `chunks.json`: `aceb24f20e329778c8ad843eb33aefc6d8cfb1c7339df2c13a416afa0f6b2761`
+  - `extractions.json`: `b50cb3b12f0ed9f7c08b12f108ce894c187232bcc8f5d9c4663c9410f5c61eb5`
+  - `vectors.npz`: `1d79719d35e0fd602581d4fa13e2c9afff338a8aa4b314c05b13234f04d43a3d`
+- **Verification**: Reloaded via `load_artifacts("data/processed/komarov_2026_ragu")` with
+  zero API calls; all 4 file hashes, 54 chunks, 54×3,072 vectors, 491 graph nodes, and 80
+  explicit edges with page and quote provenance verified.

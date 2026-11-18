@@ -29,6 +29,15 @@ class InMemoryVectorIndex(VectorIndex):
         self.dimensions = dimensions
         self._records: dict[str, ChunkEmbedding] = {}
 
+    @property
+    def records(self) -> dict[str, ChunkEmbedding]:
+        """Return a mapping of chunk_id to ChunkEmbedding."""
+        return dict(self._records)
+
+    def get_embedding(self, chunk_id: str) -> ChunkEmbedding | None:
+        """Return a single stored ChunkEmbedding by chunk_id."""
+        return self._records.get(chunk_id)
+
     def add(self, embeddings: list[ChunkEmbedding]) -> None:
         for embedding in embeddings:
             self._validate_vector(embedding.vector)

@@ -1,0 +1,26 @@
+{
+  "document_count": 1,
+  "page_count": 10,
+  "chunk_count": 54,
+  "entity_count": 741,
+  "unique_entity_count": 491,
+  "relationship_count": 595,
+  "explicit_relationship_count": 80,
+  "documents": [
+    {
+      "document_id": "922a692238adfe2db666bb65",
+      "source_path": "C:\\Users\\New User\\OneDrive\\Documents\\Moses Projects\\Verifiable-semantic-rag\\data\\papers\\komarov_2026_ragu.pdf",
+      "source_type": "pdf",
+      "checksum_sha256": "7cc09c9f3555ad4140464e69f407608b73ee5755354a04d9c0a964efae48e404",
+      "page_count": 10,
+      "chunk_count": 54
+    }
+  ],
+  "execution_time_ms": 1247197.1334000009,
+  "is_mocked": false,
+  "model_configuration": {
+    "llm_model": "gpt-6-luna",
+    "embedding_model": "text-embedding-3-large",
+    "embedding_dimensions": 3072
+  }
+}

@@ -6,6 +6,7 @@ import argparse
 import asyncio
 import json
 import os
+import sys
 from dataclasses import asdict, dataclass, field
 from pathlib import Path
 from time import perf_counter
@@ -25,6 +26,7 @@ from src.pipeline.runner import (
     DocumentProcessingPipeline,
     PipelineArtifacts,
     estimate_processing_cost,
+    load_dotenv_if_present,
 )
 from src.processing.chunking import chunk_document
 from src.retrieval.hybrid import (
@@ -52,6 +54,7 @@ class QAPipelineSummary:
     execution_time_ms: float
     is_mocked: bool
     document_count: int = 0
+    token_usage: dict[str, Any] = field(default_factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
         return asdict(self)
@@ -88,6 +91,7 @@ class QuestionAnsweringPipeline:
         retrieval_config: HybridRetrievalConfig = HybridRetrievalConfig(),
         is_mocked: bool = False,
     ) -> "QuestionAnsweringPipeline":
+        load_dotenv_if_present()
         doc_pipeline = DocumentProcessingPipeline.from_environment(is_mocked=is_mocked)
         generator = EvidenceBackedAnswerGenerator.from_environment()
         return cls(
@@ -115,6 +119,14 @@ class QuestionAnsweringPipeline:
         answer_result = await self.answer_generator.answer_question(question, retrieval_bundle)
         elapsed_ms = (perf_counter() - started) * 1_000
 
+        token_usage: dict[str, Any] = {}
+        embed_usage = getattr(artifacts.retriever.client.provider, "last_usage", None)
+        if embed_usage is not None:
+            token_usage["query_embedding"] = dict(embed_usage)
+        answer_usage = getattr(self.answer_generator.provider, "last_usage", None)
+        if answer_usage is not None:
+            token_usage["answer_generation"] = dict(answer_usage)
+
         summary = QAPipelineSummary(
             question=question,
             answer_text=answer_result.answer.answer_text,
@@ -130,6 +142,7 @@ class QuestionAnsweringPipeline:
             execution_time_ms=elapsed_ms,
             is_mocked=self.is_mocked or artifacts.summary.is_mocked,
             document_count=artifacts.summary.document_count,
+            token_usage=token_usage,
         )
         return answer_result, summary
 
@@ -145,12 +158,15 @@ class QuestionAnsweringPipeline:
         return artifacts, answer_result, qa_summary
 
 
-def _build_mock_qa_pipeline(config: HybridRetrievalConfig) -> QuestionAnsweringPipeline:
+def _build_mock_qa_pipeline(
+    config: HybridRetrievalConfig,
+    dimensions: int = 3072,
+) -> QuestionAnsweringPipeline:
     """Create a deterministic zero-cost QA pipeline for local testing and CLI verification."""
 
     class _MockEmbeddingProvider:
         async def embed(self, texts: list[str], *, model: str) -> list[list[float]]:
-            return [[1.0, 0.0, 0.0, 0.0] for _ in texts]
+            return [[1.0] + [0.0] * (dimensions - 1) for _ in texts]
 
     class _MockExtractionProvider:
         async def extract(
@@ -224,7 +240,7 @@ def _build_mock_qa_pipeline(config: HybridRetrievalConfig) -> QuestionAnsweringP
         embedding_client=EmbeddingClient(
             _MockEmbeddingProvider(),
             model_id="text-embedding-3-large",
-            dimensions=4,
+            dimensions=dimensions,
         ),
         extractor=SemanticExtractor(_MockExtractionProvider(), model_id="gpt-6-luna"),
         is_mocked=True,
@@ -239,14 +255,18 @@ def _build_mock_qa_pipeline(config: HybridRetrievalConfig) -> QuestionAnsweringP
 
 
 def _qa_cli() -> None:
+    load_dotenv_if_present()
     parser = argparse.ArgumentParser(
         description="End-to-end verifiable question-answering CLI with hybrid retrieval"
     )
     parser.add_argument(
         "--papers",
         nargs="+",
-        required=True,
         help="Paths to PDF/TXT/MD documents to index and query",
+    )
+    parser.add_argument(
+        "--load-artifacts",
+        help="Directory path to load pre-processed artifacts from disk (e.g. data/processed)",
     )
     parser.add_argument(
         "--question",
@@ -269,10 +289,10 @@ def _qa_cli() -> None:
     )
     args = parser.parse_args()
 
-    paper_paths = [Path(p).resolve() for p in args.papers]
-    for path in paper_paths:
-        if not path.is_file():
-            raise FileNotFoundError(f"Document not found: {path}")
+    from src.storage.artifacts import load_artifacts
+
+    if not args.papers and not args.load_artifacts:
+        parser.error("Either --papers or --load-artifacts must be provided.")
 
     config = HybridRetrievalConfig(
         vector_top_k=args.vector_top_k,
@@ -280,42 +300,116 @@ def _qa_cli() -> None:
         max_total_chunks=args.max_chunks,
     )
 
-    if args.estimate_cost:
-        all_chunks: list[TextChunk] = []
-        for path in paper_paths:
-            doc = ingest_file(path)
-            all_chunks.extend(chunk_document(doc))
-        base_est = estimate_processing_cost(
-            all_chunks,
-            embedding_model=os.environ.get("EMBEDDING_MODEL", "text-embedding-3-large"),
-            llm_model=os.environ.get("LLM_MODEL", "gpt-6-luna"),
-        )
-        # Add query embedding + answer generation prompt/completion estimate
-        qa_prompt_tokens = config.max_total_chunks * 300 + 250
-        qa_completion_tokens = 300
-        qa_cost = (qa_prompt_tokens / 1_000_000) * 1.25 + (qa_completion_tokens / 1_000_000) * 5.00
-        base_est["qa_generation"] = {
-            "estimated_prompt_tokens": qa_prompt_tokens,
-            "estimated_completion_tokens": qa_completion_tokens,
-            "estimated_cost_usd": round(qa_cost, 6),
-        }
-        base_est["total_estimated_cost_usd"] = round(
-            base_est["total_estimated_cost_usd"] + qa_cost, 6
-        )
-        print(json.dumps(base_est, indent=2))
-        return
+    if args.load_artifacts:
+        artifact_path = Path(args.load_artifacts).resolve()
+        if not artifact_path.is_dir():
+            print(f"Error: Artifact directory not found or not a directory: {artifact_path}", file=sys.stderr)
+            sys.exit(1)
 
-    if args.mock:
-        qa_pipeline = _build_mock_qa_pipeline(config)
+        try:
+            artifacts = load_artifacts(artifact_path)
+        except Exception as e:
+            print(f"Error loading artifacts: {type(e).__name__}: {e}", file=sys.stderr)
+            sys.exit(1)
+
+        if args.estimate_cost:
+            # When artifacts are pre-loaded, chunk embedding and extraction are $0.00
+            qa_prompt_tokens = config.max_total_chunks * 300 + 250
+            qa_completion_tokens = 300
+            query_embedding_tokens = max(1, len(args.question.split()) * 2)
+            embedding_model = os.environ.get(
+                "EMBEDDING_MODEL",
+                artifacts.summary.model_configuration.get("embedding_model", "text-embedding-3-large"),
+            )
+            llm_model = os.environ.get(
+                "LLM_MODEL",
+                artifacts.summary.model_configuration.get("llm_model", "gpt-6-luna"),
+            )
+            embedding_cost = (query_embedding_tokens / 1_000_000) * 0.13
+            qa_cost = (qa_prompt_tokens / 1_000_000) * 1.25 + (qa_completion_tokens / 1_000_000) * 5.00
+            cost_summary = {
+                "source": "pre_loaded_artifacts",
+                "loaded_chunks": len(artifacts.chunks),
+                "loaded_documents": len(artifacts.documents),
+                "chunk_embedding_api_calls": 0,
+                "semantic_extraction_api_calls": 0,
+                "query_embedding": {
+                    "model": embedding_model,
+                    "estimated_tokens": query_embedding_tokens,
+                    "estimated_cost_usd": round(embedding_cost, 6),
+                },
+                "qa_generation": {
+                    "model": llm_model,
+                    "estimated_prompt_tokens": qa_prompt_tokens,
+                    "estimated_completion_tokens": qa_completion_tokens,
+                    "estimated_cost_usd": round(qa_cost, 6),
+                },
+                "total_estimated_cost_usd": round(embedding_cost + qa_cost, 6),
+            }
+            print(json.dumps(cost_summary, indent=2))
+            return
+
+        if args.mock:
+            qa_pipeline = _build_mock_qa_pipeline(config, dimensions=artifacts.vector_index.dimensions)
+            # Override retriever client to mock provider so query string can be embedded safely
+            artifacts.retriever.client = qa_pipeline.document_pipeline.embedding_client
+        else:
+            generator = EvidenceBackedAnswerGenerator.from_environment()
+            live_embed_client = EmbeddingClient.from_environment()
+            artifacts.retriever.client = live_embed_client
+            doc_pipeline = DocumentProcessingPipeline.from_environment(is_mocked=False)
+            qa_pipeline = QuestionAnsweringPipeline(
+                document_pipeline=doc_pipeline,
+                answer_generator=generator,
+                retrieval_config=config,
+                is_mocked=False,
+            )
+
+        answer_result, qa_summary = asyncio.run(
+            qa_pipeline.ask(args.question, artifacts=artifacts, config=config)
+        )
+
     else:
-        qa_pipeline = QuestionAnsweringPipeline.from_environment(
-            retrieval_config=config,
-            is_mocked=False,
-        )
+        paper_paths = [Path(p).resolve() for p in args.papers]
+        for path in paper_paths:
+            if not path.is_file():
+                raise FileNotFoundError(f"Document not found: {path}")
 
-    _, answer_result, qa_summary = asyncio.run(
-        qa_pipeline.process_and_ask(paper_paths, args.question, config=config)
-    )
+        if args.estimate_cost:
+            all_chunks: list[TextChunk] = []
+            for path in paper_paths:
+                doc = ingest_file(path)
+                all_chunks.extend(chunk_document(doc))
+            base_est = estimate_processing_cost(
+                all_chunks,
+                embedding_model=os.environ.get("EMBEDDING_MODEL", "text-embedding-3-large"),
+                llm_model=os.environ.get("LLM_MODEL", "gpt-6-luna"),
+            )
+            qa_prompt_tokens = config.max_total_chunks * 300 + 250
+            qa_completion_tokens = 300
+            qa_cost = (qa_prompt_tokens / 1_000_000) * 1.25 + (qa_completion_tokens / 1_000_000) * 5.00
+            base_est["qa_generation"] = {
+                "estimated_prompt_tokens": qa_prompt_tokens,
+                "estimated_completion_tokens": qa_completion_tokens,
+                "estimated_cost_usd": round(qa_cost, 6),
+            }
+            base_est["total_estimated_cost_usd"] = round(
+                base_est["total_estimated_cost_usd"] + qa_cost, 6
+            )
+            print(json.dumps(base_est, indent=2))
+            return
+
+        if args.mock:
+            qa_pipeline = _build_mock_qa_pipeline(config)
+        else:
+            qa_pipeline = QuestionAnsweringPipeline.from_environment(
+                retrieval_config=config,
+                is_mocked=False,
+            )
+
+        _, answer_result, qa_summary = asyncio.run(
+            qa_pipeline.process_and_ask(paper_paths, args.question, config=config)
+        )
 
     print(f"Question: {qa_summary.question}")
     print(f"Mode: {'MOCKED' if qa_summary.is_mocked else 'LIVE API'}")
