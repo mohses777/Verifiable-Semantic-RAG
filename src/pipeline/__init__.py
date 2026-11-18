@@ -1,8 +1,9 @@
-"""End-to-end document processing pipeline."""
+"""End-to-end document processing and question-answering pipelines."""
 
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
+    from src.pipeline.qa import QAPipelineSummary, QuestionAnsweringPipeline
     from src.pipeline.runner import (
         DocumentProcessingPipeline,
         DocumentSummary,
@@ -23,6 +24,10 @@ def __getattr__(name: str):
         import importlib
         runner = importlib.import_module("src.pipeline.runner")
         return getattr(runner, name)
+    if name in {"QAPipelineSummary", "QuestionAnsweringPipeline"}:
+        import importlib
+        qa = importlib.import_module("src.pipeline.qa")
+        return getattr(qa, name)
     raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
 
 
@@ -31,5 +36,7 @@ __all__ = [
     "DocumentSummary",
     "PipelineArtifacts",
     "PipelineSummary",
+    "QAPipelineSummary",
+    "QuestionAnsweringPipeline",
     "estimate_processing_cost",
 ]

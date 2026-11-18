@@ -114,33 +114,82 @@ testbed (distinct from formal benchmark datasets):
 3. `komarov_2026_ragu.pdf` (10 pages, 54 chunks)
 Total corpus size: 55 pages, 262 chunks (~241,200 characters, ~60,300 tokens).
 
-### Token and Cost Estimation
-`estimate_processing_cost()` models expected API charges:
-- `text-embedding-3-large` (3,072d): ~$0.0078 USD.
-- `gpt-6-luna` extraction: ~$0.2326 USD.
-- Total estimated cost for all three papers: ~$0.2404 USD.
+### Separation of Mocked vs. Live Summary Artifacts
+To prevent any confusion between local structural verification and live API
+experiments, all output JSON summaries explicitly include `"is_mocked": bool`:
 
-### Machine-Readable Output
-`PipelineSummary` captures document metadata, SHA-256 checksums, page/chunk
-counts, entity/relation counts, and explicitly records whether mocked providers
-were used (`is_mocked: bool`), guarding against any confusion between mocked tests
-and live experimental runs.
-
-### Verification
-`tests/test_pipeline_integration.py` uses a valid 2-page research PDF fixture
-(`tests/fixtures/sample_article.pdf`) to test the complete pipeline end-to-end
-with mock providers. It verifies that entity and relationship graph nodes link
-directly to their originating page numbers (e.g. Page 2 for GraphRAG) and character
-offsets, and verifies full JSON serialization.
+- **Mocked Development Summary (`results/development_papers_summary.json`)**:
+  Generated with `--mock` (`"is_mocked": true`) across all 3 PDFs (55 pages, 262
+  chunks) in `2,572.38 ms`. Uses synthetic no-op providers (`0` entities, `0`
+  edges, `0` API calls) solely to verify PDF reading, deterministic chunk IDs,
+  and JSON serialization. **Must never be cited as an experimental result.**
+- **Live Experimental Summary (`results/live_smoke_test_ragu.json`)**:
+  Generated against the live OpenAI API (`"is_mocked": false`) on
+  `data/papers/komarov_2026_ragu.pdf`. Records actual model extraction outputs,
+  token counts, costs, and execution time.
 
 ## Stage 2, live smoke test: Komarov et al. (2026) verification
 
-Executed on 2026-11-18 against the live official OpenAI API.
+Executed on 2026-11-18 against the live official OpenAI API (`is_mocked: false`).
 - **Target Document**: `data/papers/komarov_2026_ragu.pdf` (10 pages, 54 chunks, document ID: `922a692238adfe2db666bb65`, SHA-256: `7cc09c9f3555ad4140464e69f407608b73ee5755354a04d9c0a964efae48e404`).
 - **Dense Embeddings**: `text-embedding-3-large`, 54/54 vectors generated. Every returned vector was verified to have exactly **3,072 dimensions**.
 - **Extraction Model**: `gpt-6-luna` using Pydantic structured outputs via `beta.chat.completions.parse`.
 - **Entities Extracted**: 785 total mentions across 54 chunks, merged into **528 unique entities** in the NetworkX graph.
-- **Relationships Extracted**: 639 relationship claims across 54 chunks, filtered to **92 explicit directed edges** between confirmed grounded entities.
+- **Relationships Extracted**: 639 relationship claims across 54 chunks, filtered by application provenance rules to **92 explicit directed edges** between confirmed grounded entities.
+- **Execution Time**: `1,087,967.369 ms` (~18.13 minutes across 54 sequential structured extraction requests and batched embedding generation).
 - **Error Count**: 0 errors. All 54 chunks processed successfully without retries.
-- **Financial Cost**: Total execution cost was **$0.049618 USD**, well within the user-approved $0.10 USD budget cap.
-- **Artifact**: Full machine-readable record saved to `results/live_smoke_test_ragu.json`.
+- **Financial Cost**: Total execution cost was **$0.049618 USD** ($0.001622 embeddings + $0.047996 extraction), within the user-approved $0.10 USD budget cap.
+- **Artifact**: Full machine-readable record preserved at `results/live_smoke_test_ragu.json`.
+
+## Stage 2, vertical slice 5: hybrid retrieval and evidence-backed answer generation
+
+Implemented on 2026-11-18 without additional paid API calls.
+
+### Hybrid Retrieval (`src/retrieval/hybrid.py`, `src/knowledge/graph.py`)
+`HybridRetriever` combines dense cosine-similarity retrieval (`SemanticRetriever`)
+with breadth-first knowledge graph traversal (`KnowledgeGraph.traverse`):
+1. Retrieves the top-`vector_top_k` chunks from the vector index.
+2. Identifies seed graph entities from both the query text (`match_entities_in_text`)
+   and the top vector-retrieved chunks (`entities_in_chunk`).
+3. Expands up to `graph_traversal_depth` hops across explicit edges in the
+   NetworkX `MultiDiGraph`, collecting `EntityEvidence` and `RelationshipEvidence`.
+4. Deduplicates all retrieved chunks by `chunk_id`, preserves the immutable
+   `TextChunk` provenance, labels each chunk with its `retrieval_sources`
+   (`"vector"`, `"graph"`, or `("vector", "graph")`), and ranks chunks by a
+   weighted combination of vector similarity and normalized graph support.
+
+### Evidence-Backed Answer Generation (`src/generation/schemas.py`, `src/generation/answering.py`)
+`GeneratedAnswer` and `EvidenceCitation` define the Pydantic structured-output
+contract for `gpt-6-luna`:
+- `answer_text`: Grounded response derived exclusively from retrieved evidence.
+- `evidence_references`: List of `EvidenceCitation` items (`chunk_id`,
+  `document_id`, `source_path`, `page_number`, verbatim `quote`, and supported `claim`).
+- `supporting_chunk_ids`: Deduplicated list of verified supporting chunk IDs.
+- `insufficient_evidence`: Boolean indicator when retrieved evidence cannot support an answer.
+- `confidence_explanation`: Explanation of confidence or uncertainty.
+
+`EvidenceBackedAnswerGenerator` enforces three application-level verification guards
+on every LLM response:
+1. **Chunk Allow-List Verification**: Citations referencing any `chunk_id` not
+   present in the retrieved `HybridRetrievalBundle` are stripped.
+2. **Verbatim Quote Verification**: Citations whose `quote` does not appear in
+   the referenced `TextChunk.text` (after whitespace and case normalization) are stripped.
+3. **Authoritative Provenance Injection & Fail-Closed Guard**: `document_id`,
+   `source_path`, and `page_number` are overwritten directly from the authoritative
+   `TextChunk` so the model can never spoof source metadata. If a non-abstaining
+   answer (`insufficient_evidence=False`) has zero verified citations remaining,
+   the generator fails closed and returns `insufficient_evidence=True`.
+
+### End-to-End Question-Answering CLI (`src/pipeline/qa.py`, `scripts/answer_question.py`)
+`QuestionAnsweringPipeline` and `scripts/answer_question.py` connect document
+processing, hybrid retrieval, and grounded answer generation into a single CLI
+supporting `--estimate-cost`, `--mock`, `--vector-top-k`, `--graph-depth`, and
+JSON summary output (`QAPipelineSummary`).
+
+### Verification
+`tests/test_hybrid_retrieval_and_answering.py` adds 6 unit and integration tests
+using mocked providers (bringing the total suite to **27 passing tests**). It
+verifies vector+graph merging, chunk deduplication, multi-hop traversal depth
+configuration, authoritative provenance overwriting, rejection of fabricated
+chunk IDs and quotes, fail-closed insufficient-evidence handling, and end-to-end
+mock QA execution on `tests/fixtures/sample_article.pdf`.

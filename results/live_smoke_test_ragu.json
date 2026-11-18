@@ -1,0 +1,27 @@
+{
+  "document_path": "data\\papers\\komarov_2026_ragu.pdf",
+  "document_id": "922a692238adfe2db666bb65",
+  "checksum_sha256": "7cc09c9f3555ad4140464e69f407608b73ee5755354a04d9c0a964efae48e404",
+  "page_count": 10,
+  "chunk_count": 54,
+  "embeddings_generated": 54,
+  "embedding_dimension": 3072,
+  "llm_extractions_completed": 54,
+  "total_entities_extracted": 785,
+  "unique_graph_entities": 528,
+  "total_relationships_extracted": 639,
+  "explicit_graph_relationships": 92,
+  "token_usage": {
+    "embedding_tokens": 12477,
+    "extraction_prompt_tokens": 16797,
+    "extraction_completion_tokens": 5400
+  },
+  "cost_breakdown_usd": {
+    "embedding_cost_usd": 0.001622,
+    "extraction_cost_usd": 0.047996
+  },
+  "total_cost_usd": 0.049618,
+  "execution_time_ms": 1087967.369,
+  "errors": [],
+  "is_mocked": false
+}

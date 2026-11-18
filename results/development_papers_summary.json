@@ -1,0 +1,42 @@
+{
+  "document_count": 3,
+  "page_count": 55,
+  "chunk_count": 262,
+  "entity_count": 0,
+  "unique_entity_count": 0,
+  "relationship_count": 0,
+  "explicit_relationship_count": 0,
+  "documents": [
+    {
+      "document_id": "1a8f710219d420dfc4a3c591",
+      "source_path": "C:\\Users\\New User\\OneDrive\\Documents\\Moses Projects\\Verifiable-semantic-rag\\data\\papers\\lewis_2020_rag.pdf",
+      "source_type": "pdf",
+      "checksum_sha256": "23e3249e9a1e75418d82efecab0ea8c4d033b89c93742f63208d47ce01f21233",
+      "page_count": 19,
+      "chunk_count": 91
+    },
+    {
+      "document_id": "751ffe220640a5da02aaf264",
+      "source_path": "C:\\Users\\New User\\OneDrive\\Documents\\Moses Projects\\Verifiable-semantic-rag\\data\\papers\\edge_2024_graphrag.pdf",
+      "source_type": "pdf",
+      "checksum_sha256": "730f1a9f38d16689900969a3eeeb1b31e45eda1dcc1f37a043afa90aff76c867",
+      "page_count": 26,
+      "chunk_count": 117
+    },
+    {
+      "document_id": "922a692238adfe2db666bb65",
+      "source_path": "C:\\Users\\New User\\OneDrive\\Documents\\Moses Projects\\Verifiable-semantic-rag\\data\\papers\\komarov_2026_ragu.pdf",
+      "source_type": "pdf",
+      "checksum_sha256": "7cc09c9f3555ad4140464e69f407608b73ee5755354a04d9c0a964efae48e404",
+      "page_count": 10,
+      "chunk_count": 54
+    }
+  ],
+  "execution_time_ms": 2572.378300001219,
+  "is_mocked": true,
+  "model_configuration": {
+    "llm_model": "gpt-6-luna",
+    "embedding_model": "text-embedding-3-large",
+    "embedding_dimensions": 3072
+  }
+}
