@@ -23,6 +23,28 @@ indistinguishable, and both clearly nonzero. Full method, deviations, costs and 
 [docs/benchmark-investigation.md](docs/benchmark-investigation.md) (sections 14 to 18); aggregate numbers:
 [results/benchmark_scores_summary.json](results/benchmark_scores_summary.json); spend: [docs/budget.md](docs/budget.md).
 
+| Task type (questions) | Metric | This project | RAGU | Difference, this project minus RAGU (95% interval) |
+| --- | --- | --- | --- | --- |
+| Fact Retrieval (12) | Answer Correctness | 0.675 | 0.622 | +0.053 (-0.061 to +0.175) |
+| Fact Retrieval (12) | ROUGE-L | 0.474 | 0.407 | +0.068 (-0.028 to +0.155) |
+| Complex Reasoning (12) | Answer Correctness | 0.521 | 0.509 | +0.013 (-0.056 to +0.076) |
+| Complex Reasoning (12) | ROUGE-L | 0.260 | 0.223 | +0.037 (+0.007 to +0.079) |
+| Contextual Summarize (12) | Answer Correctness | 0.562 | 0.632 | -0.071 (-0.171 to +0.030) |
+| Contextual Summarize (12) | Coverage | 0.597 | 0.761 | -0.164 (-0.353 to -0.002) |
+| **Pooled, 3 types (36)** | **Answer Correctness** | **0.586** | **0.588** | **-0.002 (-0.059 to +0.058)** |
+| Creative Generation (3, descriptive only) | Answer Correctness | 0.440 | 0.526 | too few questions to compare |
+
+| Other measured properties (same slice, one run each) | This project | RAGU |
+| --- | --- | --- |
+| Answers with quote-verified citations | yes (131 of 139 proposed citations accepted) | no citations |
+| Flags answers whose evidence is incomplete | yes; flagged answers scored 0.41 vs 0.69 unflagged | no |
+| Graph build cost / time (measured) | $0.143 / 6.6 min | $0.755 / 26.7 min |
+| Mean answer time per question | 9.6 s | 4.6 s |
+
+Only the pooled row is the headline result; per-type rows are small samples with several comparisons, so a single
+interval excluding zero may be chance. Scores are not comparable with the public leaderboard (documented evaluator
+deviations), and RAGU ran with its untuned defaults.
+
 ## Intended model configuration
 
 - OpenAI generation, extraction, and summarization where applicable:

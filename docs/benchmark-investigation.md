@@ -452,9 +452,9 @@ over the same questions; bootstrap intervals use 10,000 resamples, seed 7):
 | Fact Retrieval (12) | Answer Correctness | 0.675 | 0.622 | +0.053 (-0.061 to +0.175) |
 | Fact Retrieval (12) | ROUGE-L | 0.474 | 0.407 | +0.068 (-0.028 to +0.155) |
 | Complex Reasoning (12) | Answer Correctness | 0.521 | 0.509 | +0.013 (-0.056 to +0.076) |
-| Complex Reasoning (12) | ROUGE-L | 0.260 | 0.223 | +0.037 (+0.008 to +0.079) |
-| Contextual Summarize (12) | Answer Correctness | 0.562 | 0.633 | -0.071 (-0.171 to +0.030) |
-| Contextual Summarize (12) | Coverage | 0.597 | 0.761 | -0.164 (-0.354 to -0.002) |
+| Complex Reasoning (12) | ROUGE-L | 0.260 | 0.223 | +0.037 (+0.007 to +0.079) |
+| Contextual Summarize (12) | Answer Correctness | 0.562 | 0.632 | -0.071 (-0.171 to +0.030) |
+| Contextual Summarize (12) | Coverage | 0.597 | 0.761 | -0.164 (-0.353 to -0.002) |
 | **Pooled core types (36)** | **Answer Correctness** | **0.586** | **0.588** | **-0.002 (-0.059 to +0.058)** |
 | Creative Generation (3 each, after re-scoring; descriptive only) | AC / Coverage / Faithfulness | 0.440 / 0.386 / 0.738 | 0.526 / 0.534 / 0.390 | not analyzable (n=3) |
 
