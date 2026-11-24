@@ -1,0 +1,57 @@
+{
+  "is_mocked": false,
+  "api_calls": 0,
+  "artifacts": "data/processed/komarov_2026_ragu",
+  "chunk_count": 54,
+  "features": {
+    "hyphen_linebreak": {
+      "chunks_with_at_least_one": 49,
+      "total": 205
+    },
+    "hard_newlines": {
+      "chunks_with_at_least_one": 54,
+      "total": 1208
+    },
+    "non_ascii_chars": {
+      "chunks_with_at_least_one": 47,
+      "total": 152
+    },
+    "unicode_dash_or_minus": {
+      "chunks_with_at_least_one": 32,
+      "total": 64
+    },
+    "nfkc_changes_text": {
+      "chunks_with_at_least_one": 1,
+      "total": 1
+    },
+    "double_spaces": {
+      "chunks_with_at_least_one": 2,
+      "total": 4
+    }
+  },
+  "historical_result": "results/live_qa_ragu_q1.json",
+  "sensitivity": [
+    {
+      "chunk_id": "922a692238adfe2db666bb65:s3:c0",
+      "quote_has_hyphen_linebreak": false,
+      "strict_accepted_as_written": true,
+      "strict_accepted_if_line_breaks_cleaned": true
+    },
+    {
+      "chunk_id": "922a692238adfe2db666bb65:s2:c3",
+      "quote_has_hyphen_linebreak": true,
+      "strict_accepted_as_written": true,
+      "strict_accepted_if_line_breaks_cleaned": false,
+      "cleaned_diagnosis": "hyphenation_linebreak",
+      "cleaned_category": "formatting_only"
+    },
+    {
+      "chunk_id": "922a692238adfe2db666bb65:s2:c4",
+      "quote_has_hyphen_linebreak": true,
+      "strict_accepted_as_written": true,
+      "strict_accepted_if_line_breaks_cleaned": false,
+      "cleaned_diagnosis": "hyphenation_linebreak",
+      "cleaned_category": "formatting_only"
+    }
+  ]
+}

@@ -1,0 +1,294 @@
+{
+  "systems": {
+    "ours": "this project",
+    "ragu": "RAGU v0.1.0 LocalSearchEngine"
+  },
+  "note": "One run per system on a 10% Medical slice of GraphRAG-Bench (39 questions; 3 Creative Generation are descriptive only). Judge gpt-6-luna via the documented proxy (temperature omitted), similarity embeddings text-embedding-3-large. Not comparable with the public leaderboard.",
+  "eval_status": {
+    "ours": "incomplete",
+    "ragu": "incomplete"
+  },
+  "judge_cost_usd": {
+    "ours": 0.065534,
+    "ragu": 0.084986
+  },
+  "dropped_in_main_run": {
+    "ours": {
+      "Creative Generation": [
+        "Medical-d446abb7"
+      ]
+    },
+    "ragu": {
+      "Creative Generation": [
+        "Medical-4654807f",
+        "Medical-d446abb7"
+      ]
+    }
+  },
+  "completeness_after_supplements": {
+    "ours": {
+      "expected_items": 39,
+      "rescored_ids": {
+        "Medical-d446abb7": "rescore_cg"
+      },
+      "still_unscored_ids": []
+    },
+    "ragu": {
+      "expected_items": 39,
+      "rescored_ids": {
+        "Medical-4654807f": "rescore_cg",
+        "Medical-d446abb7": "rescore_cg"
+      },
+      "still_unscored_ids": []
+    }
+  },
+  "by_type": {
+    "Complex Reasoning": {
+      "answer_correctness": {
+        "ours": {
+          "n": 12,
+          "mean": 0.5213,
+          "sd": 0.2139
+        },
+        "ragu": {
+          "n": 12,
+          "mean": 0.5089,
+          "sd": 0.1838
+        },
+        "paired": {
+          "n": 12,
+          "mean_difference_a_minus_b": 0.0125,
+          "bootstrap_95ci": [
+            -0.0562,
+            0.076
+          ],
+          "a_higher": 8,
+          "b_higher": 4,
+          "ties": 0
+        }
+      },
+      "rouge_score": {
+        "ours": {
+          "n": 12,
+          "mean": 0.2601,
+          "sd": 0.1869
+        },
+        "ragu": {
+          "n": 12,
+          "mean": 0.2227,
+          "sd": 0.1402
+        },
+        "paired": {
+          "n": 12,
+          "mean_difference_a_minus_b": 0.0374,
+          "bootstrap_95ci": [
+            0.0075,
+            0.0788
+          ],
+          "a_higher": 9,
+          "b_higher": 3,
+          "ties": 0
+        }
+      }
+    },
+    "Contextual Summarize": {
+      "answer_correctness": {
+        "ours": {
+          "n": 12,
+          "mean": 0.5617,
+          "sd": 0.2146
+        },
+        "ragu": {
+          "n": 12,
+          "mean": 0.6325,
+          "sd": 0.2298
+        },
+        "paired": {
+          "n": 12,
+          "mean_difference_a_minus_b": -0.0708,
+          "bootstrap_95ci": [
+            -0.1711,
+            0.0303
+          ],
+          "a_higher": 4,
+          "b_higher": 8,
+          "ties": 0
+        }
+      },
+      "coverage_score": {
+        "ours": {
+          "n": 12,
+          "mean": 0.5968,
+          "sd": 0.391
+        },
+        "ragu": {
+          "n": 12,
+          "mean": 0.7606,
+          "sd": 0.2915
+        },
+        "paired": {
+          "n": 12,
+          "mean_difference_a_minus_b": -0.1639,
+          "bootstrap_95ci": [
+            -0.3535,
+            -0.0024
+          ],
+          "a_higher": 2,
+          "b_higher": 7,
+          "ties": 3
+        }
+      }
+    },
+    "Creative Generation": {
+      "answer_correctness": {
+        "ours": {
+          "n": 3,
+          "mean": 0.4402,
+          "sd": 0.0898
+        },
+        "ragu": {
+          "n": 3,
+          "mean": 0.526,
+          "sd": 0.1197
+        },
+        "paired": {
+          "n": 3,
+          "mean_difference_a_minus_b": -0.0858,
+          "bootstrap_95ci": [
+            -0.1689,
+            0.0432
+          ],
+          "a_higher": 1,
+          "b_higher": 2,
+          "ties": 0
+        }
+      },
+      "coverage_score": {
+        "ours": {
+          "n": 3,
+          "mean": 0.3857,
+          "sd": 0.103
+        },
+        "ragu": {
+          "n": 3,
+          "mean": 0.5338,
+          "sd": 0.2744
+        },
+        "paired": {
+          "n": 3,
+          "mean_difference_a_minus_b": -0.1481,
+          "bootstrap_95ci": [
+            -0.4664,
+            0.2222
+          ],
+          "a_higher": 1,
+          "b_higher": 2,
+          "ties": 0
+        }
+      },
+      "faithfulness": {
+        "ours": {
+          "n": 3,
+          "mean": 0.7376,
+          "sd": 0.136
+        },
+        "ragu": {
+          "n": 3,
+          "mean": 0.3895,
+          "sd": 0.2681
+        },
+        "paired": {
+          "n": 3,
+          "mean_difference_a_minus_b": 0.3481,
+          "bootstrap_95ci": [
+            0.1733,
+            0.6579
+          ],
+          "a_higher": 3,
+          "b_higher": 0,
+          "ties": 0
+        }
+      }
+    },
+    "Fact Retrieval": {
+      "answer_correctness": {
+        "ours": {
+          "n": 12,
+          "mean": 0.675,
+          "sd": 0.211
+        },
+        "ragu": {
+          "n": 12,
+          "mean": 0.6217,
+          "sd": 0.2588
+        },
+        "paired": {
+          "n": 12,
+          "mean_difference_a_minus_b": 0.0533,
+          "bootstrap_95ci": [
+            -0.0611,
+            0.1746
+          ],
+          "a_higher": 7,
+          "b_higher": 5,
+          "ties": 0
+        }
+      },
+      "rouge_score": {
+        "ours": {
+          "n": 12,
+          "mean": 0.4743,
+          "sd": 0.1426
+        },
+        "ragu": {
+          "n": 12,
+          "mean": 0.4067,
+          "sd": 0.1886
+        },
+        "paired": {
+          "n": 12,
+          "mean_difference_a_minus_b": 0.0676,
+          "bootstrap_95ci": [
+            -0.0281,
+            0.1546
+          ],
+          "a_higher": 9,
+          "b_higher": 2,
+          "ties": 1
+        }
+      }
+    }
+  },
+  "pooled_answer_correctness_core_types": {
+    "ours": {
+      "n": 36,
+      "mean": 0.586,
+      "sd": 0.2172
+    },
+    "ragu": {
+      "n": 36,
+      "mean": 0.5877,
+      "sd": 0.2269
+    },
+    "paired": {
+      "n": 36,
+      "mean_difference_a_minus_b": -0.0017,
+      "bootstrap_95ci": [
+        -0.0588,
+        0.0578
+      ]
+    }
+  },
+  "ours_answer_correctness_by_insufficient_flag_core_types": {
+    "flagged_insufficient": {
+      "n": 13,
+      "mean": 0.4083,
+      "sd": 0.1798
+    },
+    "not_flagged": {
+      "n": 23,
+      "mean": 0.6864,
+      "sd": 0.1681
+    }
+  }
+}

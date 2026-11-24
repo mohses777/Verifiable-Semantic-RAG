@@ -3,13 +3,14 @@
 from __future__ import annotations
 
 import os
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from importlib import import_module
 from time import perf_counter
 from typing import Any, Protocol
 
 from src.core.config import get_llm_settings, validate_environment
 from src.core.models import TextChunk
+from src.generation.diagnostics import classify_citation, is_quote_supported
 from src.generation.schemas import EvidenceCitation, GeneratedAnswer
 from src.retrieval.hybrid import HybridRetrievalBundle
 
@@ -51,6 +52,8 @@ class OpenAIStructuredAnswerProvider:
             dict(request_params) if request_params is not None else get_llm_settings().request_params()
         )
         self.last_usage: dict[str, int] | None = None
+        self.last_request_params: dict[str, Any] | None = None
+        self.last_response_meta: dict[str, Any] | None = None
 
     async def generate(
         self,
@@ -59,12 +62,22 @@ class OpenAIStructuredAnswerProvider:
         messages: list[dict[str, str]],
         schema: type[GeneratedAnswer],
     ) -> GeneratedAnswer:
+        self.last_request_params = {"model": model, **self._request_params}
         response = await self._client.beta.chat.completions.parse(
             model=model,
             messages=messages,
             response_format=schema,
             **self._request_params,
         )
+        choice = response.choices[0]
+        details = getattr(getattr(response, "usage", None), "completion_tokens_details", None)
+        self.last_response_meta = {
+            "response_model": getattr(response, "model", None),
+            "finish_reason": getattr(choice, "finish_reason", None),
+            "system_fingerprint": getattr(response, "system_fingerprint", None),
+            "refusal": getattr(choice.message, "refusal", None),
+            "reasoning_tokens": getattr(details, "reasoning_tokens", None),
+        }
         usage = getattr(response, "usage", None)
         if usage is not None:
             self.last_usage = {
@@ -87,6 +100,7 @@ class GroundedAnswerResult:
     retrieval: HybridRetrievalBundle
     model_id: str
     execution_ms: float
+    diagnostics: dict[str, Any] = field(default_factory=dict)
 
 
 class EvidenceBackedAnswerGenerator:
@@ -159,14 +173,24 @@ class EvidenceBackedAnswerGenerator:
             ],
         )
 
-        grounded_answer = _validate_and_ground_answer(raw_answer, retrieval)
+        grounded_answer, diagnostics = _validate_with_diagnostics(raw_answer, retrieval)
+        diagnostics["request"] = {
+            "params_sent": getattr(self.provider, "last_request_params", None),
+            "response": getattr(self.provider, "last_response_meta", None),
+        }
         return GroundedAnswerResult(
             question=question,
             answer=grounded_answer,
             retrieval=retrieval,
             model_id=self.model_id,
             execution_ms=(perf_counter() - started) * 1_000,
+            diagnostics=diagnostics,
         )
+
+
+def format_evidence_context(retrieval: HybridRetrievalBundle) -> str:
+    """The exact evidence text shown to the answering model (public, for evaluation records)."""
+    return _format_evidence_context(retrieval)
 
 
 def _format_evidence_context(retrieval: HybridRetrievalBundle) -> str:
@@ -198,18 +222,37 @@ def _validate_and_ground_answer(
     retrieval: HybridRetrievalBundle,
 ) -> GeneratedAnswer:
     """Verify every citation against retrieved chunks and overwrite provenance from source."""
+    return _validate_with_diagnostics(raw_answer, retrieval)[0]
+
+
+def _validate_with_diagnostics(
+    raw_answer: GeneratedAnswer,
+    retrieval: HybridRetrievalBundle,
+) -> tuple[GeneratedAnswer, dict[str, Any]]:
+    """Verify citations (strict rule, fail-closed) and record why each was accepted/rejected."""
     allowed_chunks: dict[str, TextChunk] = {
         item.chunk.chunk_id: item.chunk for item in retrieval.evidence_chunks
     }
+    allowed_texts = {cid: chunk.text for cid, chunk in allowed_chunks.items()}
 
     verified_citations: list[EvidenceCitation] = []
     supporting_ids: list[str] = []
+    records: list[dict[str, Any]] = []
 
-    for citation in raw_answer.evidence_references:
+    for index, citation in enumerate(raw_answer.evidence_references):
         chunk = allowed_chunks.get(citation.chunk_id)
-        if chunk is None:
-            continue
-        if not _is_quote_supported(citation.quote, chunk.text):
+        authoritative = (
+            {
+                "document_id": chunk.document_id,
+                "source_path": chunk.source_path,
+                "page_number": chunk.page_number,
+            }
+            if chunk is not None
+            else None
+        )
+        record = classify_citation(citation, index, allowed_texts, authoritative=authoritative)
+        records.append(record)
+        if record["status"] != "accepted":
             continue
 
         grounded_citation = citation.model_copy(
@@ -224,17 +267,25 @@ def _validate_and_ground_answer(
         if chunk.chunk_id not in supporting_ids:
             supporting_ids.append(chunk.chunk_id)
 
+    fail_closed = not raw_answer.insufficient_evidence and not verified_citations
+    rejection_counts: dict[str, int] = {}
+    for record in records:
+        if record["status"] == "rejected":
+            key = record["reason"]
+            if record.get("diagnosis"):
+                key = f"{key}:{record['diagnosis']}"
+            rejection_counts[key] = rejection_counts.get(key, 0) + 1
+
     if raw_answer.insufficient_evidence:
-        return raw_answer.model_copy(
+        final = raw_answer.model_copy(
             update={
                 "evidence_references": verified_citations,
                 "supporting_chunk_ids": supporting_ids,
                 "insufficient_evidence": True,
             }
         )
-
-    if not verified_citations:
-        return GeneratedAnswer(
+    elif fail_closed:
+        final = GeneratedAnswer(
             answer_text="Insufficient verifiable evidence in the retrieved sources to support an answer.",
             evidence_references=[],
             supporting_chunk_ids=[],
@@ -243,19 +294,30 @@ def _validate_and_ground_answer(
                 "The candidate answer lacked verifiable quotations matching the retrieved source chunks."
             ),
         )
+    else:
+        final = raw_answer.model_copy(
+            update={
+                "evidence_references": verified_citations,
+                "supporting_chunk_ids": supporting_ids,
+                "insufficient_evidence": False,
+            }
+        )
 
-    return raw_answer.model_copy(
-        update={
-            "evidence_references": verified_citations,
-            "supporting_chunk_ids": supporting_ids,
-            "insufficient_evidence": False,
-        }
-    )
+    diagnostics: dict[str, Any] = {
+        "raw_model_output": raw_answer.model_dump(),
+        "raw_citation_count": len(records),
+        "accepted_citation_count": len(verified_citations),
+        "rejected_citation_count": sum(1 for r in records if r["status"] == "rejected"),
+        "raw_insufficient_evidence": raw_answer.insufficient_evidence,
+        "final_insufficient_evidence": final.insufficient_evidence,
+        "fail_closed": fail_closed,
+        "fail_closed_reason": (
+            "model asserted an answer but no citation passed strict verification" if fail_closed else None
+        ),
+        "rejection_summary": rejection_counts,
+        "citations": records,
+    }
+    return final, diagnostics
 
 
-def _is_quote_supported(quote: str, chunk_text: str) -> bool:
-    normalized_quote = " ".join(quote.split()).casefold()
-    if not normalized_quote:
-        return False
-    normalized_source = " ".join(chunk_text.split()).casefold()
-    return normalized_quote in normalized_source
+_is_quote_supported = is_quote_supported

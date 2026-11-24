@@ -355,10 +355,158 @@ For the Q1 question the old substring matcher produced seeds
 `AC, GraphRAG, GraphRAG-Bench, GraphRAG-Bench (Medical), HippoRAG, HippoRAG 2, RAGU, RE,
 poRAG 2`; the fixed matcher produces `GraphRAG, GraphRAG-Bench, GraphRAG-Bench (Medical),
 HippoRAG, HippoRAG 2, RAGU`. Three spurious seeds (`AC`, `RE`, and `poRAG 2`, which matched
-inside "HippoRAG 2") were removed, so graph expansion will differ. `results/live_qa_ragu_q1.json`
-is preserved unmodified as the historical pre-fix experiment. A separate post-fix rerun
-(`results/live_qa_ragu_q1_rerun_post_seed_fix.json`) is prepared but not executed; it needs
-a cost estimate and approval. The built-in `--estimate-cost` figure for it is about $0.0005, but it assumes 300 completion tokens whereas Q1 actually used 2,038 (likely reasoning tokens), so budget roughly $0.0015 to $0.003 for the rerun.
+inside "HippoRAG 2") were removed from the *query-matched* seeds.
+`results/live_qa_ragu_q1.json` is preserved unmodified as the historical pre-fix experiment. The built-in `--estimate-cost` figure for it is about $0.0005, but it assumes 300 completion tokens whereas Q1 actually used 2,038 (likely reasoning tokens), so budget roughly $0.0015 to $0.003 for the rerun.
+
+### Q1 post-fix rerun (executed 2026-11-24, `results/live_qa_ragu_q1_rerun_post_seed_fix.json`)
+
+Run on the same artifacts and retrieval settings (`vector_top_k=5`, depth 1, 10 chunks), with
+the working tree dirty (`git_dirty: true`, base commit `1a0ca56`), approved cost ~$0.003.
+
+| Measure | Original Q1 | Post-fix rerun |
+| --- | --- | --- |
+| Retrieved chunks / graph entities / relationships | 10 / 188 / 13 | 10 / 188 / 13 (identical) |
+| Answer prompt tokens | 5,140 | 5,140 (identical) |
+| Completion tokens | 2,038 | 1,622 |
+| Actual cost | $0.001538 | $0.00133 |
+| Latency | 33,475 ms | 23,135 ms |
+| `insufficient_evidence` | false, 3 verified citations | **true, 0 verified citations** |
+
+Findings (single sample each, so these are observations, not rates):
+- **The seed fix did not change Q1's retrieval.** The graph seeds are the query-matched
+  entities plus every entity extracted in the top vector chunks; the latter (53 entities,
+  including `AC`, `RE` and `poRAG 2`) are legitimate chunk-derived seeds. Only the 6
+  query-matched seeds changed, and the evidence sent to the model was identical in size.
+- **The different outcome therefore comes from LLM output variance**, not retrieval: same
+  input, no `temperature`/`seed` set (both `null`), different answer. In the rerun every
+  returned citation failed chunk/quote verification, so the generator failed closed.
+- Why the citations failed cannot be determined from the saved record: stripped citations
+  and the raw model answer are not persisted. The original run's verbatim quotes spanned
+  PDF line breaks (e.g. `through-
+out`), so quote-normalization fragility is a hypothesis,
+  not a finding.
+- **Implication:** answer and citation outcomes are not stable across runs under the
+  current settings. Retrieval consistency (identical here) and answer/citation consistency
+  (different here) are separate properties. This pair of runs is preliminary evidence of
+  variation in the second only; it is **not** evidence that the seed fix improved retrieval.
+  The fail-closed outcome is the intended behaviour of a verifiable RAG system, not a
+  pipeline failure.
+
+### Q1 diagnostic run (executed 2026-11-24, `results/live_qa_ragu_q1_diagnostic.json`)
+
+Third live sample of the same question, artifacts and retrieval settings, default model
+parameters (none sent; `params_sent = {"model": "gpt-6-luna"}`), run with the new diagnostics
+on a dirty tree (base commit `1a0ca56`). Approved cost estimate $0.0015 to $0.003.
+
+| Measure | Original Q1 | Post-fix rerun | Diagnostic run |
+| --- | --- | --- | --- |
+| Retrieved chunks / entities / relationships | 10 / 188 / 13 | 10 / 188 / 13 | 10 / 188 / 13 |
+| Answer prompt tokens | 5,140 | 5,140 | 5,140 |
+| Completion tokens (reasoning tokens) | 2,038 (n/a) | 1,622 (n/a) | 1,503 (790) |
+| Cost | $0.001538 | $0.00133 | $0.00127 |
+| Latency | 33.5 s | 23.1 s | 19.3 s |
+| Raw / accepted / rejected citations | 3 / 3 / not recorded | not recorded: all failed closed | 2 / 2 / 0 |
+| Cited chunks | `s3:c0` (caption), `s2:c3`, `s2:c4` (prose) | none | `s3:c0` twice (table header and rows) |
+| `insufficient_evidence` | false | **true** | false |
+
+Observations (three single samples, not rates):
+- **The failure did not recur, so its cause is still undetermined.** The diagnostic run produced
+  no rejected citation, so there is nothing to diagnose; if a fail-closed outcome occurs again,
+  `answer_diagnostics` will record the reason per citation. Three samples cannot estimate a
+  failure rate.
+- **Retrieval consistency can only be partly verified.** All three runs report identical counts
+  and an identical 5,140-token prompt, but chunk IDs were recorded only in this run, so identity
+  of the chunk sets across the first two runs is inferred, not demonstrated.
+- **Citation sets are not stable even when the answer succeeds.** The two successful runs cite
+  different chunks and quotes, and the completion length varied (2,038, 1,622, 1,503 tokens;
+  790 of the last were reasoning tokens).
+- **Verbatim quoting of messy PDF text can pass strict verification.** The accepted table quote
+  includes extraction artefacts (`72.468.4 65.051.7`), copied exactly. The strict rule is
+  unchanged.
+- **`provenance_overridden: true` on accepted citations** only means the model left
+  `document_id`, `source_path` and `page_number` empty or different, and the authoritative
+  chunk values replaced them, as designed.
+- **Manual claim-level check (one answer, by hand):** every number in the answer appears in the
+  accepted table-row quote, and its mapping to task columns is decided by the header quote
+  (citation 1). Neither quote alone supports the claim; support is joint. This is an example of why
+  claim-level support (`docs/claim-level-evidence-design.md`) needs a claim-to-citation link and
+  cannot be read off per-citation validity. This was a single manual spot check, not an evaluation.
+
+## Citation rejection diagnostics (2026-11-24)
+
+`src/generation/diagnostics.py` explains every accepted or rejected citation. The
+**acceptance rule is unchanged and strict** (whitespace collapsing + case folding, then
+substring match against the cited chunk) and remains fail-closed; looser normalizations are
+used only to *diagnose* a rejection and never to accept a citation.
+
+Each QA result now has `answer_diagnostics` with: the full raw model output; per-citation
+records (status, reason, the model's quote, normalized quote, best-match ratio, longest
+matching text, chunks where the quote does exist, and model-supplied vs authoritative
+provenance with an `provenance_overridden` flag); accepted/rejected counts; a
+`rejection_summary`; `fail_closed` and its reason; and `request` (exact request parameters
+sent, plus response model, finish reason, system fingerprint and reasoning tokens when the
+API returns them). QA results also list `retrieved_chunks` (IDs, scores, sources), so
+"identical evidence" can be verified from the record instead of inferred from counts.
+
+Rejection reasons: `empty_quote`, `invalid_chunk_id`, `wrong_chunk_id` (quote exists in another
+retrieved chunk; not silently re-attributed), and `quote_not_in_cited_chunk` with a diagnosis in
+{`unicode_variant`, `hyphenation_linebreak`, `punctuation_difference`, `spacing_difference`}
+(category `formatting_only`), `ellipsis_elision`, `partial_overlap`, or `unsupported_text`
+(category `content_difference`). 18 tests cover PDF line breaks, whitespace, punctuation,
+Unicode, spacing artefacts, elision, unsupported text, invalid/wrong chunk IDs, provenance
+injection, partial acceptance, abstention, and fail-closed behaviour.
+
+### Is the Q1 failure explained by PDF text normalization? (offline, no API calls)
+
+The raw model output of the post-fix rerun was not saved (this feature did not yet exist), so
+its rejection cause **cannot be determined**. `scripts/analyze_quote_fragility.py`
+(`results/quote_fragility_analysis.json`) measures how fragile verbatim quoting is on the
+Komarov PDF text (54 chunks): 49/54 chunks contain a hyphenated line break (205 in total), all
+54 contain hard newlines, 47/54 contain non-ASCII characters and 32/54 contain Unicode
+dashes/minus signs. Two of the three quotes accepted in the original Q1 contained a
+hyphen-linebreak (e.g. `through-
+out`); if a model had "cleaned" them, strict verification
+would have rejected both (diagnosed `hyphenation_linebreak`, `formatting_only`). So
+formatting fragility is a plausible, quantified explanation, but it is a hypothesis; the
+next live run will record the actual rejection reason. Whether to add deterministic
+de-hyphenation to the acceptance rule is a separate research decision and has **not** been made.
+
+## Reproducibility controls (2026-11-24)
+
+`temperature`, `seed`, `reasoning_effort` and `max_completion_tokens` are configurable in
+`config/experiment.json` (`llm.*`). A non-null value is only allowed once
+`llm.parameter_support.<name>.status` is `verified`; otherwise loading the settings raises
+`UnverifiedParameterError`. All are currently `null` (not sent).
+
+**Live probe result (2026-11-24, `results/llm_parameter_probe.json`, $0.000009, dirty tree):**
+`temperature=0.0` was **rejected** by the API (400 `unsupported_value`: only the default 1 is supported),
+so temperature cannot be used to reduce variance. `seed=12345`, `reasoning_effort="low"` and
+`max_completion_tokens=256` were **accepted** on `chat.completions.create`. Limits of this
+evidence: acceptance only, not improved consistency; no `system_fingerprint` was returned; only
+the value `"low"` was probed for `reasoning_effort` (the value `none` assumed by the RAGU adapter
+is unverified); and the structured-output `parse` path was not separately probed. 
+`scripts/probe_llm_parameters.py` sends one tiny request per parameter and records accept/reject
+and the exact API error; it defaults to a dry run (verified: no calls) and `--execute` makes
+paid calls (worst-case estimate about $0.004, to be approved first). A verified `seed` still does not guarantee
+identical outputs. Every QA result records the parameters actually sent
+(`answer_diagnostics.request.params_sent`, `run_configuration.llm_request_params_sent`) and the
+support status (`run_configuration.llm_parameter_support`). Historical results are unchanged.
+
+### Planned thesis evaluation (not yet implemented)
+
+See `docs/claim-level-evidence-design.md` for why answer-level citation validity is not claim-level
+evidence support and how the latter could be measured.
+
+
+Citation reliability should be evaluated over multiple questions and repeated runs: citation
+precision, citation coverage, evidence-supported claim rate, abstention (fail-closed) rate, and
+answer correctness, rather than a single successful answer.
+
+## RAGU installation check (2026-11-24)
+
+RAGU `v0.1.0` (`abd3f2958c186dc624bbd42560ad6e1e7033efaf`) installs and initializes in an isolated
+Python 3.14.4 venv on Windows with the project's models configured; details, the dependency
+lock, and what remains unverified are in `docs/ragu-integration.md`. No API calls were made.
 
 ## Cost configuration (2026-11-24)
 
@@ -366,3 +514,14 @@ All rates are read from `config/pricing.json` via `src/core/pricing.py`; a model
 configured price raises an error instead of falling back. `gpt-6-luna` ($0.10 input / $0.50
 output per million tokens) was confirmed against the OpenAI pricing page. The
 `text-embedding-3-large` rate ($0.13 per million tokens) was likewise confirmed on its OpenAI model page on 2026-11-24.
+
+## Repository housekeeping (2026-11-24)
+
+- `scripts/smoke_test_ragu_paper.py` was removed. It wrote the pre-run cost *estimate* into report fields that read as
+  measured cost, which is why `results/live_smoke_test_ragu.json` shows $0.049618 (an estimate at superseded rates; see
+  above). It is superseded by `scripts/process_papers.py`, which records measured usage. Its code remains in git history
+  (commit `1a0ca56` and earlier); its result file is kept and documented as an estimate.
+- The lost run-1 summary of the benchmark-slice build was renamed to
+  `results/pipeline_graphrag_bench_slice_run1_artifacts_lost.json`.
+- Cost estimators were recalibrated from measured runs (see `src/pipeline/runner.py` and `src/pipeline/qa.py`); the
+  earlier constants (100 completion tokens per extracted chunk, 300 per answer) were far below the measured values.

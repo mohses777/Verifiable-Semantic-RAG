@@ -1,0 +1,1055 @@
+{
+  "description": "Text-free per-sample scores (question ids, types, metric values, main run or re-score). Lets results/benchmark_scores_summary.json be recomputed without the git-ignored evaluator outputs.",
+  "ours": {
+    "expected_items": [
+      [
+        "Complex Reasoning",
+        "Medical-16a39fa8"
+      ],
+      [
+        "Complex Reasoning",
+        "Medical-1c34ae24"
+      ],
+      [
+        "Complex Reasoning",
+        "Medical-2d14639d"
+      ],
+      [
+        "Complex Reasoning",
+        "Medical-34a9155d"
+      ],
+      [
+        "Complex Reasoning",
+        "Medical-37f18801"
+      ],
+      [
+        "Complex Reasoning",
+        "Medical-3aa8a2c6"
+      ],
+      [
+        "Complex Reasoning",
+        "Medical-6a5c89f3"
+      ],
+      [
+        "Complex Reasoning",
+        "Medical-705f9e89"
+      ],
+      [
+        "Complex Reasoning",
+        "Medical-7dd235f1"
+      ],
+      [
+        "Complex Reasoning",
+        "Medical-b2a64d4a"
+      ],
+      [
+        "Complex Reasoning",
+        "Medical-e7ebb96c"
+      ],
+      [
+        "Complex Reasoning",
+        "Medical-f6a94128"
+      ],
+      [
+        "Contextual Summarize",
+        "Medical-024819a8"
+      ],
+      [
+        "Contextual Summarize",
+        "Medical-088c7ad0"
+      ],
+      [
+        "Contextual Summarize",
+        "Medical-1e74344c"
+      ],
+      [
+        "Contextual Summarize",
+        "Medical-251615ea"
+      ],
+      [
+        "Contextual Summarize",
+        "Medical-3cc76c04"
+      ],
+      [
+        "Contextual Summarize",
+        "Medical-61a5ec94"
+      ],
+      [
+        "Contextual Summarize",
+        "Medical-61c0e9bc"
+      ],
+      [
+        "Contextual Summarize",
+        "Medical-78a99b6b"
+      ],
+      [
+        "Contextual Summarize",
+        "Medical-7d2a19f6"
+      ],
+      [
+        "Contextual Summarize",
+        "Medical-c9e77dca"
+      ],
+      [
+        "Contextual Summarize",
+        "Medical-df2fbbd7"
+      ],
+      [
+        "Contextual Summarize",
+        "Medical-f38ec745"
+      ],
+      [
+        "Creative Generation",
+        "Medical-29982b18"
+      ],
+      [
+        "Creative Generation",
+        "Medical-4654807f"
+      ],
+      [
+        "Creative Generation",
+        "Medical-d446abb7"
+      ],
+      [
+        "Fact Retrieval",
+        "Medical-0535a6b1"
+      ],
+      [
+        "Fact Retrieval",
+        "Medical-3b688fe1"
+      ],
+      [
+        "Fact Retrieval",
+        "Medical-3d1b49a8"
+      ],
+      [
+        "Fact Retrieval",
+        "Medical-3fb59b05"
+      ],
+      [
+        "Fact Retrieval",
+        "Medical-5492a510"
+      ],
+      [
+        "Fact Retrieval",
+        "Medical-54b3e97f"
+      ],
+      [
+        "Fact Retrieval",
+        "Medical-653c0da3"
+      ],
+      [
+        "Fact Retrieval",
+        "Medical-78788ae0"
+      ],
+      [
+        "Fact Retrieval",
+        "Medical-9b28edf9"
+      ],
+      [
+        "Fact Retrieval",
+        "Medical-9c46dbea"
+      ],
+      [
+        "Fact Retrieval",
+        "Medical-b1ab4938"
+      ],
+      [
+        "Fact Retrieval",
+        "Medical-cf21d241"
+      ]
+    ],
+    "samples": [
+      {
+        "id": "Medical-16a39fa8",
+        "question_type": "Complex Reasoning",
+        "source": "main",
+        "metrics": {
+          "rouge_score": 0.1584158415841584,
+          "answer_correctness": 0.7972156842249524
+        }
+      },
+      {
+        "id": "Medical-1c34ae24",
+        "question_type": "Complex Reasoning",
+        "source": "main",
+        "metrics": {
+          "rouge_score": 0.17142857142857143,
+          "answer_correctness": 0.48920891012834006
+        }
+      },
+      {
+        "id": "Medical-2d14639d",
+        "question_type": "Complex Reasoning",
+        "source": "main",
+        "metrics": {
+          "rouge_score": 0.23703703703703705,
+          "answer_correctness": 0.6037557273412636
+        }
+      },
+      {
+        "id": "Medical-34a9155d",
+        "question_type": "Complex Reasoning",
+        "source": "main",
+        "metrics": {
+          "rouge_score": 0.12048192771084337,
+          "answer_correctness": 0.3487654488226014
+        }
+      },
+      {
+        "id": "Medical-37f18801",
+        "question_type": "Complex Reasoning",
+        "source": "main",
+        "metrics": {
+          "rouge_score": 0.41558441558441556,
+          "answer_correctness": 0.7300229107290551
+        }
+      },
+      {
+        "id": "Medical-3aa8a2c6",
+        "question_type": "Complex Reasoning",
+        "source": "main",
+        "metrics": {
+          "rouge_score": 0.16541353383458646,
+          "answer_correctness": 0.21013991047635586
+        }
+      },
+      {
+        "id": "Medical-6a5c89f3",
+        "question_type": "Complex Reasoning",
+        "source": "main",
+        "metrics": {
+          "rouge_score": 0.11320754716981132,
+          "answer_correctness": 0.48864275786450584
+        }
+      },
+      {
+        "id": "Medical-705f9e89",
+        "question_type": "Complex Reasoning",
+        "source": "main",
+        "metrics": {
+          "rouge_score": 0.47619047619047616,
+          "answer_correctness": 0.6079957933902929
+        }
+      },
+      {
+        "id": "Medical-7dd235f1",
+        "question_type": "Complex Reasoning",
+        "source": "main",
+        "metrics": {
+          "rouge_score": 0.23255813953488372,
+          "answer_correctness": 0.6029027979844925
+        }
+      },
+      {
+        "id": "Medical-b2a64d4a",
+        "question_type": "Complex Reasoning",
+        "source": "main",
+        "metrics": {
+          "rouge_score": 0.7272727272727274,
+          "answer_correctness": 0.8380086870282518
+        }
+      },
+      {
+        "id": "Medical-e7ebb96c",
+        "question_type": "Complex Reasoning",
+        "source": "main",
+        "metrics": {
+          "rouge_score": 0.18487394957983197,
+          "answer_correctness": 0.21062190205689515
+        }
+      },
+      {
+        "id": "Medical-f6a94128",
+        "question_type": "Complex Reasoning",
+        "source": "main",
+        "metrics": {
+          "rouge_score": 0.11864406779661017,
+          "answer_correctness": 0.3284503480454245
+        }
+      },
+      {
+        "id": "Medical-024819a8",
+        "question_type": "Contextual Summarize",
+        "source": "main",
+        "metrics": {
+          "answer_correctness": 0.5607303115859367,
+          "coverage_score": 0.9090909090909091
+        }
+      },
+      {
+        "id": "Medical-088c7ad0",
+        "question_type": "Contextual Summarize",
+        "source": "main",
+        "metrics": {
+          "answer_correctness": 0.21456422219891158,
+          "coverage_score": 0.0
+        }
+      },
+      {
+        "id": "Medical-1e74344c",
+        "question_type": "Contextual Summarize",
+        "source": "main",
+        "metrics": {
+          "answer_correctness": 0.5504540812538922,
+          "coverage_score": 0.3333333333333333
+        }
+      },
+      {
+        "id": "Medical-251615ea",
+        "question_type": "Contextual Summarize",
+        "source": "main",
+        "metrics": {
+          "answer_correctness": 0.727069029685174,
+          "coverage_score": 1.0
+        }
+      },
+      {
+        "id": "Medical-3cc76c04",
+        "question_type": "Contextual Summarize",
+        "source": "main",
+        "metrics": {
+          "answer_correctness": 0.20095599806202946,
+          "coverage_score": 0.0
+        }
+      },
+      {
+        "id": "Medical-61a5ec94",
+        "question_type": "Contextual Summarize",
+        "source": "main",
+        "metrics": {
+          "answer_correctness": 0.40750011816229625,
+          "coverage_score": 0.6363636363636364
+        }
+      },
+      {
+        "id": "Medical-61c0e9bc",
+        "question_type": "Contextual Summarize",
+        "source": "main",
+        "metrics": {
+          "answer_correctness": 0.5633746898287959,
+          "coverage_score": 0.38461538461538464
+        }
+      },
+      {
+        "id": "Medical-78a99b6b",
+        "question_type": "Contextual Summarize",
+        "source": "main",
+        "metrics": {
+          "answer_correctness": 0.9672985477912195,
+          "coverage_score": 1.0
+        }
+      },
+      {
+        "id": "Medical-7d2a19f6",
+        "question_type": "Contextual Summarize",
+        "source": "main",
+        "metrics": {
+          "answer_correctness": 0.7150675226560367,
+          "coverage_score": 0.625
+        }
+      },
+      {
+        "id": "Medical-c9e77dca",
+        "question_type": "Contextual Summarize",
+        "source": "main",
+        "metrics": {
+          "answer_correctness": 0.68721936008891,
+          "coverage_score": 1.0
+        }
+      },
+      {
+        "id": "Medical-df2fbbd7",
+        "question_type": "Contextual Summarize",
+        "source": "main",
+        "metrics": {
+          "answer_correctness": 0.5880761680571787,
+          "coverage_score": 0.2727272727272727
+        }
+      },
+      {
+        "id": "Medical-f38ec745",
+        "question_type": "Contextual Summarize",
+        "source": "main",
+        "metrics": {
+          "answer_correctness": 0.5577890297849648,
+          "coverage_score": 1.0
+        }
+      },
+      {
+        "id": "Medical-29982b18",
+        "question_type": "Creative Generation",
+        "source": "main",
+        "metrics": {
+          "answer_correctness": 0.34305231484583243,
+          "coverage_score": 0.3,
+          "faithfulness": 0.5833333333333334
+        }
+      },
+      {
+        "id": "Medical-4654807f",
+        "question_type": "Creative Generation",
+        "source": "main",
+        "metrics": {
+          "answer_correctness": 0.4572217453577361,
+          "coverage_score": 0.35714285714285715,
+          "faithfulness": 0.84
+        }
+      },
+      {
+        "id": "Medical-d446abb7",
+        "question_type": "Creative Generation",
+        "source": "rescore_cg",
+        "metrics": {
+          "answer_correctness": 0.5203112530070035,
+          "coverage_score": 0.5,
+          "faithfulness": 0.7894736842105263
+        }
+      },
+      {
+        "id": "Medical-0535a6b1",
+        "question_type": "Fact Retrieval",
+        "source": "main",
+        "metrics": {
+          "rouge_score": 0.4666666666666667,
+          "answer_correctness": 0.7165081194606524
+        }
+      },
+      {
+        "id": "Medical-3b688fe1",
+        "question_type": "Fact Retrieval",
+        "source": "main",
+        "metrics": {
+          "rouge_score": 0.48780487804878053,
+          "answer_correctness": 0.5921023267635421
+        }
+      },
+      {
+        "id": "Medical-3d1b49a8",
+        "question_type": "Fact Retrieval",
+        "source": "main",
+        "metrics": {
+          "rouge_score": 0.6,
+          "answer_correctness": 0.986565868852854
+        }
+      },
+      {
+        "id": "Medical-3fb59b05",
+        "question_type": "Fact Retrieval",
+        "source": "main",
+        "metrics": {
+          "rouge_score": 0.36363636363636365,
+          "answer_correctness": 0.7284148212513666
+        }
+      },
+      {
+        "id": "Medical-5492a510",
+        "question_type": "Fact Retrieval",
+        "source": "main",
+        "metrics": {
+          "rouge_score": 0.7647058823529412,
+          "answer_correctness": 0.9952760752125684
+        }
+      },
+      {
+        "id": "Medical-54b3e97f",
+        "question_type": "Fact Retrieval",
+        "source": "main",
+        "metrics": {
+          "rouge_score": 0.21818181818181817,
+          "answer_correctness": 0.19671006214921444
+        }
+      },
+      {
+        "id": "Medical-653c0da3",
+        "question_type": "Fact Retrieval",
+        "source": "main",
+        "metrics": {
+          "rouge_score": 0.4782608695652174,
+          "answer_correctness": 0.6114925870839412
+        }
+      },
+      {
+        "id": "Medical-78788ae0",
+        "question_type": "Fact Retrieval",
+        "source": "main",
+        "metrics": {
+          "rouge_score": 0.4615384615384615,
+          "answer_correctness": 0.7076372291878401
+        }
+      },
+      {
+        "id": "Medical-9b28edf9",
+        "question_type": "Fact Retrieval",
+        "source": "main",
+        "metrics": {
+          "rouge_score": 0.4390243902439024,
+          "answer_correctness": 0.47879931037339735
+        }
+      },
+      {
+        "id": "Medical-9c46dbea",
+        "question_type": "Fact Retrieval",
+        "source": "main",
+        "metrics": {
+          "rouge_score": 0.40816326530612246,
+          "answer_correctness": 0.7128201933205421
+        }
+      },
+      {
+        "id": "Medical-b1ab4938",
+        "question_type": "Fact Retrieval",
+        "source": "main",
+        "metrics": {
+          "rouge_score": 0.36363636363636365,
+          "answer_correctness": 0.6394256377081482
+        }
+      },
+      {
+        "id": "Medical-cf21d241",
+        "question_type": "Fact Retrieval",
+        "source": "main",
+        "metrics": {
+          "rouge_score": 0.64,
+          "answer_correctness": 0.7339260156609244
+        }
+      }
+    ]
+  },
+  "ragu": {
+    "expected_items": [
+      [
+        "Complex Reasoning",
+        "Medical-16a39fa8"
+      ],
+      [
+        "Complex Reasoning",
+        "Medical-1c34ae24"
+      ],
+      [
+        "Complex Reasoning",
+        "Medical-2d14639d"
+      ],
+      [
+        "Complex Reasoning",
+        "Medical-34a9155d"
+      ],
+      [
+        "Complex Reasoning",
+        "Medical-37f18801"
+      ],
+      [
+        "Complex Reasoning",
+        "Medical-3aa8a2c6"
+      ],
+      [
+        "Complex Reasoning",
+        "Medical-6a5c89f3"
+      ],
+      [
+        "Complex Reasoning",
+        "Medical-705f9e89"
+      ],
+      [
+        "Complex Reasoning",
+        "Medical-7dd235f1"
+      ],
+      [
+        "Complex Reasoning",
+        "Medical-b2a64d4a"
+      ],
+      [
+        "Complex Reasoning",
+        "Medical-e7ebb96c"
+      ],
+      [
+        "Complex Reasoning",
+        "Medical-f6a94128"
+      ],
+      [
+        "Contextual Summarize",
+        "Medical-024819a8"
+      ],
+      [
+        "Contextual Summarize",
+        "Medical-088c7ad0"
+      ],
+      [
+        "Contextual Summarize",
+        "Medical-1e74344c"
+      ],
+      [
+        "Contextual Summarize",
+        "Medical-251615ea"
+      ],
+      [
+        "Contextual Summarize",
+        "Medical-3cc76c04"
+      ],
+      [
+        "Contextual Summarize",
+        "Medical-61a5ec94"
+      ],
+      [
+        "Contextual Summarize",
+        "Medical-61c0e9bc"
+      ],
+      [
+        "Contextual Summarize",
+        "Medical-78a99b6b"
+      ],
+      [
+        "Contextual Summarize",
+        "Medical-7d2a19f6"
+      ],
+      [
+        "Contextual Summarize",
+        "Medical-c9e77dca"
+      ],
+      [
+        "Contextual Summarize",
+        "Medical-df2fbbd7"
+      ],
+      [
+        "Contextual Summarize",
+        "Medical-f38ec745"
+      ],
+      [
+        "Creative Generation",
+        "Medical-29982b18"
+      ],
+      [
+        "Creative Generation",
+        "Medical-4654807f"
+      ],
+      [
+        "Creative Generation",
+        "Medical-d446abb7"
+      ],
+      [
+        "Fact Retrieval",
+        "Medical-0535a6b1"
+      ],
+      [
+        "Fact Retrieval",
+        "Medical-3b688fe1"
+      ],
+      [
+        "Fact Retrieval",
+        "Medical-3d1b49a8"
+      ],
+      [
+        "Fact Retrieval",
+        "Medical-3fb59b05"
+      ],
+      [
+        "Fact Retrieval",
+        "Medical-5492a510"
+      ],
+      [
+        "Fact Retrieval",
+        "Medical-54b3e97f"
+      ],
+      [
+        "Fact Retrieval",
+        "Medical-653c0da3"
+      ],
+      [
+        "Fact Retrieval",
+        "Medical-78788ae0"
+      ],
+      [
+        "Fact Retrieval",
+        "Medical-9b28edf9"
+      ],
+      [
+        "Fact Retrieval",
+        "Medical-9c46dbea"
+      ],
+      [
+        "Fact Retrieval",
+        "Medical-b1ab4938"
+      ],
+      [
+        "Fact Retrieval",
+        "Medical-cf21d241"
+      ]
+    ],
+    "samples": [
+      {
+        "id": "Medical-16a39fa8",
+        "question_type": "Complex Reasoning",
+        "source": "main",
+        "metrics": {
+          "rouge_score": 0.1592920353982301,
+          "answer_correctness": 0.7159754798275146
+        }
+      },
+      {
+        "id": "Medical-1c34ae24",
+        "question_type": "Complex Reasoning",
+        "source": "main",
+        "metrics": {
+          "rouge_score": 0.10738255033557047,
+          "answer_correctness": 0.33583980232442723
+        }
+      },
+      {
+        "id": "Medical-2d14639d",
+        "question_type": "Complex Reasoning",
+        "source": "main",
+        "metrics": {
+          "rouge_score": 0.1724137931034483,
+          "answer_correctness": 0.46223817141973417
+        }
+      },
+      {
+        "id": "Medical-34a9155d",
+        "question_type": "Complex Reasoning",
+        "source": "main",
+        "metrics": {
+          "rouge_score": 0.11494252873563217,
+          "answer_correctness": 0.35195983182352564
+        }
+      },
+      {
+        "id": "Medical-37f18801",
+        "question_type": "Complex Reasoning",
+        "source": "main",
+        "metrics": {
+          "rouge_score": 0.36363636363636365,
+          "answer_correctness": 0.6801385675321973
+        }
+      },
+      {
+        "id": "Medical-3aa8a2c6",
+        "question_type": "Complex Reasoning",
+        "source": "main",
+        "metrics": {
+          "rouge_score": 0.17266187050359716,
+          "answer_correctness": 0.42507807158508504
+        }
+      },
+      {
+        "id": "Medical-6a5c89f3",
+        "question_type": "Complex Reasoning",
+        "source": "main",
+        "metrics": {
+          "rouge_score": 0.14492753623188404,
+          "answer_correctness": 0.34047441490821745
+        }
+      },
+      {
+        "id": "Medical-705f9e89",
+        "question_type": "Complex Reasoning",
+        "source": "main",
+        "metrics": {
+          "rouge_score": 0.4615384615384615,
+          "answer_correctness": 0.7259899324809291
+        }
+      },
+      {
+        "id": "Medical-7dd235f1",
+        "question_type": "Complex Reasoning",
+        "source": "main",
+        "metrics": {
+          "rouge_score": 0.21739130434782608,
+          "answer_correctness": 0.5570109068642227
+        }
+      },
+      {
+        "id": "Medical-b2a64d4a",
+        "question_type": "Complex Reasoning",
+        "source": "main",
+        "metrics": {
+          "rouge_score": 0.5,
+          "answer_correctness": 0.8247895640154941
+        }
+      },
+      {
+        "id": "Medical-e7ebb96c",
+        "question_type": "Complex Reasoning",
+        "source": "main",
+        "metrics": {
+          "rouge_score": 0.1777777777777778,
+          "answer_correctness": 0.38238262823577773
+        }
+      },
+      {
+        "id": "Medical-f6a94128",
+        "question_type": "Complex Reasoning",
+        "source": "main",
+        "metrics": {
+          "rouge_score": 0.08,
+          "answer_correctness": 0.3043492635575812
+        }
+      },
+      {
+        "id": "Medical-024819a8",
+        "question_type": "Contextual Summarize",
+        "source": "main",
+        "metrics": {
+          "answer_correctness": 0.46710614511721416,
+          "coverage_score": 1.0
+        }
+      },
+      {
+        "id": "Medical-088c7ad0",
+        "question_type": "Contextual Summarize",
+        "source": "main",
+        "metrics": {
+          "answer_correctness": 0.6132443355464007,
+          "coverage_score": 0.8888888888888888
+        }
+      },
+      {
+        "id": "Medical-1e74344c",
+        "question_type": "Contextual Summarize",
+        "source": "main",
+        "metrics": {
+          "answer_correctness": 0.4659250054344971,
+          "coverage_score": 0.0
+        }
+      },
+      {
+        "id": "Medical-251615ea",
+        "question_type": "Contextual Summarize",
+        "source": "main",
+        "metrics": {
+          "answer_correctness": 0.980837907438218,
+          "coverage_score": 1.0
+        }
+      },
+      {
+        "id": "Medical-3cc76c04",
+        "question_type": "Contextual Summarize",
+        "source": "main",
+        "metrics": {
+          "answer_correctness": 0.33881288591318115,
+          "coverage_score": 0.6666666666666666
+        }
+      },
+      {
+        "id": "Medical-61a5ec94",
+        "question_type": "Contextual Summarize",
+        "source": "main",
+        "metrics": {
+          "answer_correctness": 0.41250056798598,
+          "coverage_score": 0.8
+        }
+      },
+      {
+        "id": "Medical-61c0e9bc",
+        "question_type": "Contextual Summarize",
+        "source": "main",
+        "metrics": {
+          "answer_correctness": 0.7127503797858581,
+          "coverage_score": 0.5384615384615384
+        }
+      },
+      {
+        "id": "Medical-78a99b6b",
+        "question_type": "Contextual Summarize",
+        "source": "main",
+        "metrics": {
+          "answer_correctness": 0.9806096768463242,
+          "coverage_score": 1.0
+        }
+      },
+      {
+        "id": "Medical-7d2a19f6",
+        "question_type": "Contextual Summarize",
+        "source": "main",
+        "metrics": {
+          "answer_correctness": 0.8272657064723079,
+          "coverage_score": 0.75
+        }
+      },
+      {
+        "id": "Medical-c9e77dca",
+        "question_type": "Contextual Summarize",
+        "source": "main",
+        "metrics": {
+          "answer_correctness": 0.40014522433079613,
+          "coverage_score": 1.0
+        }
+      },
+      {
+        "id": "Medical-df2fbbd7",
+        "question_type": "Contextual Summarize",
+        "source": "main",
+        "metrics": {
+          "answer_correctness": 0.8399520038954088,
+          "coverage_score": 0.5833333333333334
+        }
+      },
+      {
+        "id": "Medical-f38ec745",
+        "question_type": "Contextual Summarize",
+        "source": "main",
+        "metrics": {
+          "answer_correctness": 0.5509062730551499,
+          "coverage_score": 0.9
+        }
+      },
+      {
+        "id": "Medical-29982b18",
+        "question_type": "Creative Generation",
+        "source": "main",
+        "metrics": {
+          "answer_correctness": 0.5119839813370276,
+          "coverage_score": 0.5,
+          "faithfulness": 0.37037037037037035
+        }
+      },
+      {
+        "id": "Medical-4654807f",
+        "question_type": "Creative Generation",
+        "source": "rescore_cg",
+        "metrics": {
+          "answer_correctness": 0.41400112439545195,
+          "coverage_score": 0.8235294117647058,
+          "faithfulness": 0.6666666666666666
+        }
+      },
+      {
+        "id": "Medical-d446abb7",
+        "question_type": "Creative Generation",
+        "source": "rescore_cg",
+        "metrics": {
+          "answer_correctness": 0.6521130711689938,
+          "coverage_score": 0.2777777777777778,
+          "faithfulness": 0.13157894736842105
+        }
+      },
+      {
+        "id": "Medical-0535a6b1",
+        "question_type": "Fact Retrieval",
+        "source": "main",
+        "metrics": {
+          "rouge_score": 0.3,
+          "answer_correctness": 0.7225726890318971
+        }
+      },
+      {
+        "id": "Medical-3b688fe1",
+        "question_type": "Fact Retrieval",
+        "source": "main",
+        "metrics": {
+          "rouge_score": 0.4848484848484849,
+          "answer_correctness": 0.9520890742016473
+        }
+      },
+      {
+        "id": "Medical-3d1b49a8",
+        "question_type": "Fact Retrieval",
+        "source": "main",
+        "metrics": {
+          "rouge_score": 0.7368421052631579,
+          "answer_correctness": 0.9894796920937043
+        }
+      },
+      {
+        "id": "Medical-3fb59b05",
+        "question_type": "Fact Retrieval",
+        "source": "main",
+        "metrics": {
+          "rouge_score": 0.36363636363636365,
+          "answer_correctness": 0.7279901845722696
+        }
+      },
+      {
+        "id": "Medical-5492a510",
+        "question_type": "Fact Retrieval",
+        "source": "main",
+        "metrics": {
+          "rouge_score": 0.392156862745098,
+          "answer_correctness": 0.7189222447591805
+        }
+      },
+      {
+        "id": "Medical-54b3e97f",
+        "question_type": "Fact Retrieval",
+        "source": "main",
+        "metrics": {
+          "rouge_score": 0.11320754716981131,
+          "answer_correctness": 0.2085022059411487
+        }
+      },
+      {
+        "id": "Medical-653c0da3",
+        "question_type": "Fact Retrieval",
+        "source": "main",
+        "metrics": {
+          "rouge_score": 0.7741935483870968,
+          "answer_correctness": 0.7449297141949011
+        }
+      },
+      {
+        "id": "Medical-78788ae0",
+        "question_type": "Fact Retrieval",
+        "source": "main",
+        "metrics": {
+          "rouge_score": 0.3333333333333333,
+          "answer_correctness": 0.20593834486864263
+        }
+      },
+      {
+        "id": "Medical-9b28edf9",
+        "question_type": "Fact Retrieval",
+        "source": "main",
+        "metrics": {
+          "rouge_score": 0.31034482758620696,
+          "answer_correctness": 0.44436663751276934
+        }
+      },
+      {
+        "id": "Medical-9c46dbea",
+        "question_type": "Fact Retrieval",
+        "source": "main",
+        "metrics": {
+          "rouge_score": 0.2857142857142857,
+          "answer_correctness": 0.6389602445518157
+        }
+      },
+      {
+        "id": "Medical-b1ab4938",
+        "question_type": "Fact Retrieval",
+        "source": "main",
+        "metrics": {
+          "rouge_score": 0.3157894736842105,
+          "answer_correctness": 0.37796887245435995
+        }
+      },
+      {
+        "id": "Medical-cf21d241",
+        "question_type": "Fact Retrieval",
+        "source": "main",
+        "metrics": {
+          "rouge_score": 0.4705882352941176,
+          "answer_correctness": 0.728585476803532
+        }
+      }
+    ]
+  },
+  "flagged_insufficient_ids": {
+    "ours": [
+      "Medical-024819a8",
+      "Medical-088c7ad0",
+      "Medical-1c34ae24",
+      "Medical-1e74344c",
+      "Medical-29982b18",
+      "Medical-3aa8a2c6",
+      "Medical-3b688fe1",
+      "Medical-3cc76c04",
+      "Medical-4654807f",
+      "Medical-54b3e97f",
+      "Medical-61c0e9bc",
+      "Medical-7dd235f1",
+      "Medical-d446abb7",
+      "Medical-df2fbbd7",
+      "Medical-e7ebb96c",
+      "Medical-f6a94128"
+    ]
+  }
+}

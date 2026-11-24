@@ -1,0 +1,310 @@
+{
+  "label": "ragu",
+  "is_mocked": false,
+  "status": "incomplete",
+  "error": null,
+  "items_file": "C:\\Users\\New User\\OneDrive\\Documents\\Moses Projects\\Verifiable-semantic-rag\\data\\benchmarks\\graphrag_bench\\runs\\ragu\\items.json",
+  "items_sha256": "61c851e4ced0f75e9801727faa2cdb4943a2d46245978ff636c9705149951830",
+  "item_count": 39,
+  "evaluator_commit": "fdbab5959b18c96532580877ffe27d112bccc0ec",
+  "evaluator_args": {
+    "mode": "API",
+    "model": "gpt-6-luna",
+    "base_url": "http://127.0.0.1:57043/v1",
+    "embedding_model": "text-embedding-3-large",
+    "num_samples": null,
+    "detailed_output": true
+  },
+  "judge_ledger": {
+    "policy_hash": "d82cb830006cd91aa233e5854adb3ebf877b5f4581f5b5eb34ed15cac44227f7",
+    "judge_model": "gpt-6-luna",
+    "omit_parameters": [
+      "temperature"
+    ],
+    "requests_total": 233,
+    "forwarded_to_api": 233,
+    "forwarded_paths": {
+      "/v1/chat/completions": 159,
+      "/v1/embeddings": 74
+    },
+    "embedding_model": "text-embedding-3-large",
+    "refused": {},
+    "upstream_status": {
+      "200": 233
+    },
+    "failed_request_count": 0,
+    "failed_requests": [],
+    "removed_parameters": {
+      "temperature": 159
+    },
+    "forwarded_parameter_keys": {
+      "messages": 159,
+      "model": 233,
+      "frequency_penalty": 159,
+      "presence_penalty": 159,
+      "seed": 159,
+      "stream": 159,
+      "top_p": 159,
+      "input": 74,
+      "encoding_format": 74
+    },
+    "models_seen": {
+      "gpt-6-luna": 159,
+      "text-embedding-3-large": 74
+    },
+    "usage": {
+      "measured": true,
+      "max_usd": 0.25,
+      "cost_usd": 0.084986,
+      "budget_exceeded": false,
+      "blocked_calls_after_cap": 0,
+      "api_calls": {
+        "chat": 159,
+        "embedding": 74
+      },
+      "tokens": {
+        "prompt": 107916,
+        "completion": 146674,
+        "reasoning": 68677,
+        "embedding": 6598
+      },
+      "request_chars": {
+        "chat": 539182,
+        "embedding": 31638
+      },
+      "endpoints": {},
+      "errors": []
+    }
+  },
+  "reconciliation": {
+    "types": {
+      "Complex Reasoning": {
+        "expected_samples": 12,
+        "returned_samples": 12,
+        "missing_ids": [],
+        "metrics": {
+          "rouge_score": {
+            "expected": 12,
+            "scored": 12,
+            "dropped_sample": 0,
+            "nan_or_missing": 0,
+            "unscored_ids": []
+          },
+          "answer_correctness": {
+            "expected": 12,
+            "scored": 12,
+            "dropped_sample": 0,
+            "nan_or_missing": 0,
+            "unscored_ids": []
+          }
+        }
+      },
+      "Contextual Summarize": {
+        "expected_samples": 12,
+        "returned_samples": 12,
+        "missing_ids": [],
+        "metrics": {
+          "answer_correctness": {
+            "expected": 12,
+            "scored": 12,
+            "dropped_sample": 0,
+            "nan_or_missing": 0,
+            "unscored_ids": []
+          },
+          "coverage_score": {
+            "expected": 12,
+            "scored": 12,
+            "dropped_sample": 0,
+            "nan_or_missing": 0,
+            "unscored_ids": []
+          }
+        }
+      },
+      "Creative Generation": {
+        "expected_samples": 3,
+        "returned_samples": 1,
+        "missing_ids": [
+          "Medical-4654807f",
+          "Medical-d446abb7"
+        ],
+        "metrics": {
+          "answer_correctness": {
+            "expected": 3,
+            "scored": 1,
+            "dropped_sample": 2,
+            "nan_or_missing": 0,
+            "unscored_ids": [
+              "Medical-4654807f",
+              "Medical-d446abb7"
+            ]
+          },
+          "coverage_score": {
+            "expected": 3,
+            "scored": 1,
+            "dropped_sample": 2,
+            "nan_or_missing": 0,
+            "unscored_ids": [
+              "Medical-4654807f",
+              "Medical-d446abb7"
+            ]
+          },
+          "faithfulness": {
+            "expected": 3,
+            "scored": 1,
+            "dropped_sample": 2,
+            "nan_or_missing": 0,
+            "unscored_ids": [
+              "Medical-4654807f",
+              "Medical-d446abb7"
+            ]
+          }
+        }
+      },
+      "Fact Retrieval": {
+        "expected_samples": 12,
+        "returned_samples": 12,
+        "missing_ids": [],
+        "metrics": {
+          "rouge_score": {
+            "expected": 12,
+            "scored": 12,
+            "dropped_sample": 0,
+            "nan_or_missing": 0,
+            "unscored_ids": []
+          },
+          "answer_correctness": {
+            "expected": 12,
+            "scored": 12,
+            "dropped_sample": 0,
+            "nan_or_missing": 0,
+            "unscored_ids": []
+          }
+        }
+      }
+    },
+    "skipped_items": [],
+    "complete": false
+  },
+  "average_scores": {
+    "Complex Reasoning": {
+      "rouge_score": 0.22266368513406598,
+      "answer_correctness": 0.5088522195478923
+    },
+    "Contextual Summarize": {
+      "answer_correctness": 0.6325046759851113,
+      "coverage_score": 0.7606125356125357
+    },
+    "Creative Generation": {
+      "answer_correctness": 0.5119839813370276,
+      "coverage_score": 0.5,
+      "faithfulness": 0.37037037037037035
+    },
+    "Fact Retrieval": {
+      "rouge_score": 0.40672125563851386,
+      "answer_correctness": 0.6216921150821557
+    }
+  },
+  "fake_upstream_check": null,
+  "run_configuration": {
+    "config_version": "1.0.0",
+    "recorded_at": "2026-11-24T22:15:10.341794+00:00",
+    "is_mocked": false,
+    "provider": "openai",
+    "base_url": "https://api.openai.com/v1",
+    "llm": {
+      "model": "gpt-6-luna",
+      "temperature": null,
+      "reasoning_effort": null,
+      "max_completion_tokens": null,
+      "seed": null
+    },
+    "llm_request_params_sent": {},
+    "llm_parameter_support": {
+      "temperature": {
+        "status": "unsupported",
+        "probed_value": 0.0,
+        "probed_on": "2026-11-24",
+        "evidence": "results/llm_parameter_probe.json",
+        "note": "API returned 400 unsupported_value: only the default (1) is supported by this model, so temperature cannot be used to reduce variance."
+      },
+      "seed": {
+        "status": "verified",
+        "probed_value": 12345,
+        "verified_on": "2026-11-24",
+        "evidence": "results/llm_parameter_probe.json",
+        "note": "Accepted by chat.completions.create. No system_fingerprint was returned, so backend version cannot be tracked, and acceptance does not imply deterministic output."
+      },
+      "reasoning_effort": {
+        "status": "verified",
+        "probed_value": "low",
+        "verified_on": "2026-11-24",
+        "evidence": "results/llm_parameter_probe.json",
+        "note": "Only the value 'low' was probed. Other values (for example 'none', assumed by the RAGU adapter) are NOT verified."
+      },
+      "max_completion_tokens": {
+        "status": "verified",
+        "probed_value": 256,
+        "verified_on": "2026-11-24",
+        "evidence": "results/llm_parameter_probe.json",
+        "note": "Accepted. A cap that is too small may truncate reasoning plus structured output; choose it deliberately."
+      },
+      "note": "A parameter may only be set to a non-null value above once its status is 'verified' by a recorded live probe (scripts/probe_llm_parameters.py). Otherwise enabling it raises an error. 'Verified' means the API accepted the probed value on chat.completions.create (a tiny plain request); it does not mean the parameter improves consistency, and the structured-output parse path used by the pipeline was not separately probed. All parameters remain disabled (null) by default."
+    },
+    "embedding": {
+      "model": "text-embedding-3-large",
+      "dimensions": 3072,
+      "batch_size": 100
+    },
+    "pricing": {
+      "file": "config/pricing.json",
+      "source": "OpenAI Developers pricing page (developers.openai.com/api/docs/pricing), screenshot supplied by the researcher on 2026-11-24",
+      "recorded_on": "2026-11-24",
+      "usd_per_tokens": 1000000,
+      "rates": {
+        "gpt-6-luna": {
+          "input": 0.1,
+          "output": 0.5
+        },
+        "text-embedding-3-large": {
+          "input": 0.13,
+          "output": 0.0
+        }
+      }
+    },
+    "code": {
+      "git_commit": "1a0ca56a250b7bfd70856ff511b03fc660d3b281",
+      "git_dirty": true
+    },
+    "environment": {
+      "python": "3.14.4",
+      "platform": "Windows-11-10.0.26200-SP0",
+      "packages": {
+        "openai": "1.109.1",
+        "pydantic": "2.14.4",
+        "networkx": null,
+        "numpy": "2.5.5",
+        "pypdf": null
+      }
+    },
+    "ragu": {
+      "repository": "https://github.com/RaguTeam/RAGU.git",
+      "checkout_path": "third_party/RAGU",
+      "tag": "v0.1.0",
+      "commit_sha": "abd3f2958c186dc624bbd42560ad6e1e7033efaf",
+      "commit_date": "2026-09-08T01:31:56+07:00",
+      "package": "graph_ragu 0.1.0",
+      "requires_python": ">=3.10 (classifiers list 3.10-3.12)",
+      "installed": true,
+      "install_check": {
+        "date": "2026-11-24",
+        "environment": "isolated venv outside the repo (%LOCALAPPDATA%/verifiable-semantic-rag/venv-ragu-py314), Python 3.14.4, Windows 11",
+        "method": "pip install ./third_party/RAGU (non-editable)",
+        "dependency_lock": "config/ragu_env_requirements.txt",
+        "result": "installed; imports and offline initialization succeeded; no API calls made"
+      },
+      "notes": "third_party/ is git-ignored, so this pin is the record of the exact RAGU version. RAGU was installed on Python 3.14.4 although its classifiers list 3.10-3.12; import/init works but runtime behaviour (extraction, indexing, querying) is not yet verified.",
+      "checkout_head": "abd3f2958c186dc624bbd42560ad6e1e7033efaf",
+      "checkout_matches_pin": true
+    }
+  }
+}

@@ -1,0 +1,152 @@
+{
+  "is_mocked": false,
+  "run_configuration": {
+    "config_version": "1.0.0",
+    "recorded_at": "2026-11-24T11:17:16.767199+00:00",
+    "is_mocked": false,
+    "provider": "openai",
+    "base_url": "https://api.openai.com/v1",
+    "llm": {
+      "model": "gpt-6-luna",
+      "temperature": null,
+      "reasoning_effort": null,
+      "max_completion_tokens": null,
+      "seed": null
+    },
+    "llm_request_params_sent": {},
+    "llm_parameter_support": {
+      "temperature": {
+        "status": "unverified",
+        "verified_on": null
+      },
+      "seed": {
+        "status": "unverified",
+        "verified_on": null
+      },
+      "reasoning_effort": {
+        "status": "unverified",
+        "verified_on": null
+      },
+      "max_completion_tokens": {
+        "status": "unverified",
+        "verified_on": null
+      },
+      "note": "A parameter may only be set to a non-null value above once its status is 'verified' by a recorded live probe (scripts/probe_llm_parameters.py). Until then enabling it raises an error. Even a verified seed does not guarantee identical outputs."
+    },
+    "embedding": {
+      "model": "text-embedding-3-large",
+      "dimensions": 3072,
+      "batch_size": 100
+    },
+    "pricing": {
+      "file": "config/pricing.json",
+      "source": "OpenAI Developers pricing page (developers.openai.com/api/docs/pricing), screenshot supplied by the researcher on 2026-11-24",
+      "recorded_on": "2026-11-24",
+      "usd_per_tokens": 1000000,
+      "rates": {
+        "gpt-6-luna": {
+          "input": 0.1,
+          "output": 0.5
+        },
+        "text-embedding-3-large": {
+          "input": 0.13,
+          "output": 0.0
+        }
+      }
+    },
+    "code": {
+      "git_commit": "1a0ca56a250b7bfd70856ff511b03fc660d3b281",
+      "git_dirty": true
+    },
+    "environment": {
+      "python": "3.14.4",
+      "platform": "Windows-11-10.0.26200-SP0",
+      "packages": {
+        "openai": "2.54.0",
+        "pydantic": "2.13.4",
+        "networkx": "3.7",
+        "numpy": "2.5.2",
+        "pypdf": "5.9.0"
+      }
+    },
+    "ragu": {
+      "repository": "https://github.com/RaguTeam/RAGU.git",
+      "checkout_path": "third_party/RAGU",
+      "tag": "v0.1.0",
+      "commit_sha": "abd3f2958c186dc624bbd42560ad6e1e7033efaf",
+      "commit_date": "2026-09-08T01:31:56+07:00",
+      "package": "graph_ragu 0.1.0",
+      "requires_python": ">=3.10 (classifiers list 3.10-3.12)",
+      "installed": true,
+      "install_check": {
+        "date": "2026-11-24",
+        "environment": "isolated venv outside the repo (%LOCALAPPDATA%/verifiable-semantic-rag/venv-ragu-py314), Python 3.14.4, Windows 11",
+        "method": "pip install ./third_party/RAGU (non-editable)",
+        "dependency_lock": "config/ragu_env_requirements.txt",
+        "result": "installed; imports and offline initialization succeeded; no API calls made"
+      },
+      "notes": "third_party/ is git-ignored, so this pin is the record of the exact RAGU version. RAGU was installed on Python 3.14.4 although its classifiers list 3.10-3.12; import/init works but runtime behaviour (extraction, indexing, querying) is not yet verified.",
+      "checkout_head": "abd3f2958c186dc624bbd42560ad6e1e7033efaf",
+      "checkout_matches_pin": true
+    }
+  },
+  "total_cost_usd": 9e-06,
+  "results": [
+    {
+      "parameter": "temperature",
+      "request_params": {
+        "model": "gpt-6-luna",
+        "temperature": 0.0
+      },
+      "accepted": false,
+      "error_type": "BadRequestError",
+      "error": "Error code: 400 - {'error': {'message': \"Unsupported value: 'temperature' does not support 0.0 with this model. Only the default (1) value is supported.\", 'type': 'invalid_request_error', 'param': 'temperature', 'code': 'unsupported_value'}}",
+      "elapsed_ms": 4638.4
+    },
+    {
+      "parameter": "seed",
+      "request_params": {
+        "model": "gpt-6-luna",
+        "seed": 12345
+      },
+      "accepted": true,
+      "response_model": "gpt-6-luna",
+      "finish_reason": "stop",
+      "system_fingerprint": null,
+      "prompt_tokens": 13,
+      "completion_tokens": 4,
+      "cost_usd": 3e-06,
+      "elapsed_ms": 1462.4
+    },
+    {
+      "parameter": "reasoning_effort",
+      "request_params": {
+        "model": "gpt-6-luna",
+        "reasoning_effort": "low"
+      },
+      "accepted": true,
+      "response_model": "gpt-6-luna",
+      "finish_reason": "stop",
+      "system_fingerprint": null,
+      "prompt_tokens": 13,
+      "completion_tokens": 4,
+      "cost_usd": 3e-06,
+      "elapsed_ms": 1229.0
+    },
+    {
+      "parameter": "max_completion_tokens",
+      "request_params": {
+        "model": "gpt-6-luna",
+        "max_completion_tokens": 256
+      },
+      "accepted": true,
+      "response_model": "gpt-6-luna",
+      "finish_reason": "stop",
+      "system_fingerprint": null,
+      "prompt_tokens": 13,
+      "completion_tokens": 4,
+      "cost_usd": 3e-06,
+      "elapsed_ms": 1344.4
+    }
+  ]
+}

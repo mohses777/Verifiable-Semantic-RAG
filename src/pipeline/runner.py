@@ -13,6 +13,7 @@ from time import perf_counter
 from typing import Any, Sequence
 
 from src.core.config import build_run_configuration
+from src.core.env import load_dotenv_if_present  # noqa: F401  (re-exported for existing imports)
 from src.core.models import SourceDocument, TextChunk
 from src.core.pricing import get_model_pricing
 from src.embeddings.client import EmbeddingClient, EmbeddingProvider
@@ -23,18 +24,6 @@ from src.knowledge.extraction import ChunkExtraction, SemanticExtractor, Structu
 from src.knowledge.graph import KnowledgeGraph
 from src.knowledge.schemas import ExtractionResult
 from src.processing.chunking import ChunkingConfig, chunk_document
-
-
-def load_dotenv_if_present(env_path: str | Path = ".env") -> None:
-    """Populate os.environ from a local .env file without overwriting existing env vars."""
-    path = Path(env_path)
-    if not path.is_file():
-        return
-    for raw_line in path.read_text(encoding="utf-8").splitlines():
-        line = raw_line.strip()
-        if line and not line.startswith("#") and "=" in line:
-            key, value = line.split("=", 1)
-            os.environ.setdefault(key.strip(), value.strip())
 
 
 @dataclass(frozen=True)
@@ -119,6 +108,14 @@ def measured_processing_usage(
     return usage
 
 
+# Calibrated from measured runs of this project's extraction on the GraphRAG-Bench slice (2026-11-24, 132 chunks each,
+# gpt-6-luna with default reasoning): 78,202 prompt tokens per run (about 592 per call, of which about 250 are chunk
+# text, so about 340 of instructions) and 268,422 / 263,730 completion tokens (about 2,000 per chunk, reasoning
+# included). See results/pipeline_graphrag_bench_slice_run2.json. Earlier constants (80 and 100) were far too low.
+EXTRACTION_PROMPT_OVERHEAD_TOKENS = 340
+EXTRACTION_COMPLETION_TOKENS_PER_CHUNK = 2_000
+
+
 def estimate_processing_cost(
     chunks: Sequence[TextChunk],
     *,
@@ -147,9 +144,8 @@ def estimate_processing_cost(
 
     embedding_cost = (estimated_input_tokens / 1_000_000) * embedding_rate_per_million
 
-    prompt_tokens_per_call = 80
-    total_extraction_prompt_tokens = estimated_input_tokens + (len(chunks) * prompt_tokens_per_call)
-    estimated_output_tokens = len(chunks) * 100
+    total_extraction_prompt_tokens = estimated_input_tokens + (len(chunks) * EXTRACTION_PROMPT_OVERHEAD_TOKENS)
+    estimated_output_tokens = len(chunks) * EXTRACTION_COMPLETION_TOKENS_PER_CHUNK
 
     llm_prompt_cost = (total_extraction_prompt_tokens / 1_000_000) * llm_prompt_rate_per_million
     llm_completion_cost = (estimated_output_tokens / 1_000_000) * llm_completion_rate_per_million
@@ -188,7 +184,11 @@ class DocumentProcessingPipeline:
         vector_index: VectorIndex | None = None,
         knowledge_graph: KnowledgeGraph | None = None,
         is_mocked: bool = False,
+        extraction_concurrency: int = 1,
     ) -> None:
+        if extraction_concurrency < 1:
+            raise ValueError("extraction_concurrency must be at least 1")
+        self.extraction_concurrency = extraction_concurrency
         self.embedding_client = embedding_client
         self.extractor = extractor
         self.chunking_config = chunking_config or ChunkingConfig()
@@ -207,6 +207,7 @@ class DocumentProcessingPipeline:
         embedding_provider: EmbeddingProvider | None = None,
         extraction_provider: StructuredExtractionProvider | None = None,
         is_mocked: bool = False,
+        extraction_concurrency: int = 1,
     ) -> "DocumentProcessingPipeline":
         load_dotenv_if_present()
         embedding_client = EmbeddingClient.from_environment(embedding_provider)
@@ -218,6 +219,7 @@ class DocumentProcessingPipeline:
             vector_index=vector_index,
             knowledge_graph=knowledge_graph,
             is_mocked=is_mocked,
+            extraction_concurrency=extraction_concurrency,
         )
 
     async def process_document(self, path: str | Path) -> PipelineArtifacts:
@@ -258,12 +260,46 @@ class DocumentProcessingPipeline:
         if not self.is_mocked:
             print(f"  [2/2] Extracting semantic entities and relationships using {self.extractor.model_id}...")
         all_extractions: list[ChunkExtraction] = []
-        for idx, chunk in enumerate(all_chunks, 1):
-            extraction = await self.extractor.extract_chunk(chunk)
-            all_extractions.append(extraction)
-            self.knowledge_graph.add_extraction(extraction)
-            if not self.is_mocked and (idx % 10 == 0 or idx == len(all_chunks)):
-                print(f"        Progress: {idx}/{len(all_chunks)} chunks processed...")
+        if self.extraction_concurrency == 1:
+            # Original sequential path, unchanged.
+            for idx, chunk in enumerate(all_chunks, 1):
+                extraction = await self.extractor.extract_chunk(chunk)
+                all_extractions.append(extraction)
+                self.knowledge_graph.add_extraction(extraction)
+                if not self.is_mocked and (idx % 10 == 0 or idx == len(all_chunks)):
+                    print(f"        Progress: {idx}/{len(all_chunks)} chunks processed...")
+        else:
+            # Bounded concurrency; results keep chunk order so the graph is built deterministically.
+            # On the first failure all other in-flight extractions are cancelled (no further spend).
+            semaphore = asyncio.Semaphore(self.extraction_concurrency)
+            completed = 0
+            aborted = False
+
+            async def extract_one(chunk: TextChunk) -> ChunkExtraction:
+                nonlocal completed, aborted
+                async with semaphore:
+                    if aborted:  # a sibling failed: start no new request
+                        raise asyncio.CancelledError()
+                    try:
+                        extraction = await self.extractor.extract_chunk(chunk)
+                    except BaseException:
+                        aborted = True
+                        raise
+                completed += 1
+                if not self.is_mocked and (completed % 10 == 0 or completed == len(all_chunks)):
+                    print(f"        Progress: {completed}/{len(all_chunks)} chunks processed...")
+                return extraction
+
+            tasks = [asyncio.ensure_future(extract_one(chunk)) for chunk in all_chunks]
+            try:
+                all_extractions = list(await asyncio.gather(*tasks))
+            except BaseException:
+                for task in tasks:
+                    task.cancel()
+                await asyncio.gather(*tasks, return_exceptions=True)
+                raise
+            for extraction in all_extractions:
+                self.knowledge_graph.add_extraction(extraction)
 
         elapsed_ms = (perf_counter() - started) * 1_000
 
@@ -327,6 +363,8 @@ def _cli() -> None:
     parser.add_argument("--output-summary", help="Path to write the output JSON summary", default="results/pipeline_summary.json")
     parser.add_argument("--estimate-cost", action="store_true", help="Estimate tokens and API cost without running extraction")
     parser.add_argument("--mock", action="store_true", help="Run with mock providers (zero API cost, synthetic responses)")
+    parser.add_argument("--concurrency", type=int, default=1, help="Concurrent extraction requests (default 1 = sequential)")
+    parser.add_argument("--max-usd", type=float, default=None, help="Hard spend cap: API calls are refused once reached")
     args = parser.parse_args()
 
     from src.storage.artifacts import load_artifacts, save_artifacts
@@ -387,10 +425,35 @@ def _cli() -> None:
             is_mocked=True,
         )
     else:
-        pipeline = DocumentProcessingPipeline.from_environment(is_mocked=False)
+        provider_kwargs: dict[str, Any] = {}
+        meter = None
+        if args.max_usd is not None:
+            from openai import AsyncOpenAI
+
+            from src.core.config import validate_environment
+            from src.embeddings.client import OpenAIEmbeddingProvider
+            from src.integrations.ragu_metering import MeteredAsyncOpenAI, UsageMeter
+            from src.knowledge.extraction import OpenAIStructuredExtractionProvider
+
+            validate_environment()
+            meter = UsageMeter(max_usd=args.max_usd)
+            metered = MeteredAsyncOpenAI(
+                AsyncOpenAI(api_key=os.environ["OPENAI_API_KEY"], base_url=os.environ.get("OPENAI_BASE_URL")),
+                meter,
+            )
+            key = os.environ["OPENAI_API_KEY"]
+            provider_kwargs = {
+                "embedding_provider": OpenAIEmbeddingProvider(api_key=key, client=metered),
+                "extraction_provider": OpenAIStructuredExtractionProvider(api_key=key, client=metered),
+            }
+        pipeline = DocumentProcessingPipeline.from_environment(
+            is_mocked=False, extraction_concurrency=args.concurrency, **provider_kwargs
+        )
 
     print(f"Processing {len(paper_paths)} documents (mock={args.mock})...")
     artifacts = asyncio.run(pipeline.process_documents(paper_paths))
+    if args.max_usd is not None and not args.mock:
+        print("Metered usage:", json.dumps(meter.summary()))  # type: ignore[possibly-undefined]
     print(f"\nCompleted in {artifacts.summary.execution_time_ms:.1f}ms")
     print(f"Summary: {artifacts.summary.document_count} docs, {artifacts.summary.page_count} pages, {artifacts.summary.chunk_count} chunks")
     print(f"Graph: {artifacts.summary.unique_entity_count} unique entities, {artifacts.summary.explicit_relationship_count} explicit edges")

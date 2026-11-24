@@ -313,5 +313,64 @@ class ArtifactPersistenceTests(unittest.TestCase):
         self.assertEqual(summary.evidence_references[0]["page_number"], 2)
 
 
+class ArtifactSaveLockTests(unittest.TestCase):
+    """Windows/OneDrive can briefly lock a freshly written folder; paid results must never be discarded."""
+
+    def setUp(self) -> None:
+        self.temp_dir = tempfile.TemporaryDirectory()
+        self.root = Path(self.temp_dir.name)
+        self.storage_path = self.root / "artifacts"
+
+    def tearDown(self) -> None:
+        self.temp_dir.cleanup()
+
+    def test_transient_lock_is_retried_and_save_succeeds(self) -> None:
+        import os
+        from unittest import mock
+
+        real_rename = os.rename
+        failures = {"left": 2}
+
+        def flaky_rename(src, dst):
+            if failures["left"] > 0:
+                failures["left"] -= 1
+                raise PermissionError(5, "Access is denied")
+            return real_rename(src, dst)
+
+        with mock.patch("src.storage.artifacts.os.rename", side_effect=flaky_rename), \
+                mock.patch("src.storage.artifacts.time.sleep"):
+            original = make_test_artifacts(dim=3)
+            saved = save_artifacts(original, self.storage_path)
+        self.assertEqual(failures["left"], 0)
+        self.assertTrue((saved / "manifest.json").is_file())
+        self.assertEqual(len(load_artifacts(saved, expected_embedding_dim=3).chunks), len(original.chunks))
+        self.assertEqual([p.name for p in self.root.iterdir()], ["artifacts"])  # no staging left behind
+
+    def test_persistent_lock_keeps_the_verified_staged_copy(self) -> None:
+        from unittest import mock
+
+        from src.storage.artifacts import ArtifactSaveError
+
+        with mock.patch("src.storage.artifacts.os.rename", side_effect=PermissionError(5, "Access is denied")), \
+                mock.patch("src.storage.artifacts.time.sleep"):
+            original = make_test_artifacts(dim=3)
+            with self.assertRaises(ArtifactSaveError) as raised:
+                save_artifacts(original, self.storage_path)
+        self.assertIn("KEPT", str(raised.exception))
+        self.assertFalse(self.storage_path.exists())
+        staged = [p for p in self.root.iterdir() if p.name.startswith(".tmp_artifacts_")]
+        self.assertEqual(len(staged), 1)
+        recovered = load_artifacts(staged[0], expected_embedding_dim=3)  # hash-verified on load
+        self.assertEqual(len(recovered.chunks), len(original.chunks))
+
+    def test_failure_before_staging_completes_still_cleans_up(self) -> None:
+        from unittest import mock
+
+        with mock.patch("src.storage.artifacts.np.savez_compressed", side_effect=OSError("disk full")):
+            with self.assertRaises(OSError):
+                save_artifacts(make_test_artifacts(dim=3), self.storage_path)
+        self.assertEqual(list(self.root.iterdir()), [])
+
+
 if __name__ == "__main__":
     unittest.main()

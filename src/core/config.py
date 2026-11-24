@@ -24,6 +24,13 @@ class ConfigMismatchError(ValueError):
     """Raised when environment variables disagree with the versioned configuration."""
 
 
+class UnverifiedParameterError(ValueError):
+    """Raised when a request parameter is enabled before its API support is verified."""
+
+
+LLM_REQUEST_PARAMETERS = ("temperature", "reasoning_effort", "max_completion_tokens", "seed")
+
+
 @lru_cache(maxsize=None)
 def _load(path: str) -> dict[str, Any]:
     return json.loads(Path(path).read_text(encoding="utf-8"))
@@ -64,6 +71,14 @@ class LLMSettings:
 
 def get_llm_settings(path: str | Path = EXPERIMENT_CONFIG_PATH) -> LLMSettings:
     llm = load_experiment_config(path)["llm"]
+    support = llm.get("parameter_support", {})
+    for name in LLM_REQUEST_PARAMETERS:
+        if llm.get(name) is not None and support.get(name, {}).get("status") != "verified":
+            raise UnverifiedParameterError(
+                f"LLM parameter '{name}' is set in config but its API support is not verified. "
+                "Run the approved live probe (scripts/probe_llm_parameters.py), record the result "
+                "in parameter_support, then enable it."
+            )
     return LLMSettings(
         model=llm["model"],
         temperature=llm.get("temperature"),
@@ -182,6 +197,7 @@ def build_run_configuration(
         "base_url": config["base_url"],
         "llm": llm,
         "llm_request_params_sent": get_llm_settings().request_params(),
+        "llm_parameter_support": load_experiment_config()["llm"].get("parameter_support", {}),
         "embedding": {
             "model": embedding_model,
             "dimensions": embedding_dimensions,

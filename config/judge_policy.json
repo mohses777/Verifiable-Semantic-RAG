@@ -1,0 +1,13 @@
+{
+  "policy_version": "1.0.0",
+  "description": "Deviation of the benchmark judge calls from the official GraphRAG-Bench evaluator. The unmodified evaluator is pointed at a local proxy that applies exactly this policy to every judge request, for BOTH systems.",
+  "judge_model": "gpt-6-luna",
+  "embedding_model": "text-embedding-3-large",
+  "embedding_note": "Replaces the evaluator local BAAI/bge-large-en-v1.5 for the semantic-similarity term of Answer Correctness (researcher decision 2026-11-24). Project-consistent but a deviation from the official evaluator.",
+  "omit_parameters": ["temperature"],
+  "omit_reason": "The official evaluator always sends temperature=0.0. A 2026-11-24 live probe showed gpt-6-luna rejects temperature=0.0 with its default reasoning configuration (400 unsupported_value, only the default 1 is supported). Reasoning effort is deliberately NOT changed to accommodate it.",
+  "unchanged_parameters_note": "All other parameters the evaluator sends (for example top_p=1, seed=42, presence_penalty=0, frequency_penalty=0, model, messages) are forwarded unchanged. Their acceptance by gpt-6-luna has NOT been verified; if the API rejects any, requests fail visibly in the ledger and the policy must be revised deliberately, never silently.",
+  "allowed_paths": ["/v1/chat/completions", "/v1/embeddings"],
+  "reject_streaming": true,
+  "refuse_status_code": 402
+}

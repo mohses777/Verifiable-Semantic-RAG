@@ -9,6 +9,13 @@
     "reasoning_effort": null,
     "max_completion_tokens": null,
     "seed": null,
+    "parameter_support": {
+      "temperature": {"status": "unsupported", "probed_value": 0.0, "probed_on": "2026-11-24", "evidence": "results/llm_parameter_probe.json", "note": "API returned 400 unsupported_value: only the default (1) is supported by this model, so temperature cannot be used to reduce variance."},
+      "seed": {"status": "verified", "probed_value": 12345, "verified_on": "2026-11-24", "evidence": "results/llm_parameter_probe.json", "note": "Accepted by chat.completions.create. No system_fingerprint was returned, so backend version cannot be tracked, and acceptance does not imply deterministic output."},
+      "reasoning_effort": {"status": "verified", "probed_value": "low", "verified_on": "2026-11-24", "evidence": "results/llm_parameter_probe.json", "note": "Only the value 'low' was probed. Other values (for example 'none', assumed by the RAGU adapter) are NOT verified."},
+      "max_completion_tokens": {"status": "verified", "probed_value": 256, "verified_on": "2026-11-24", "evidence": "results/llm_parameter_probe.json", "note": "Accepted. A cap that is too small may truncate reasoning plus structured output; choose it deliberately."},
+      "note": "A parameter may only be set to a non-null value above once its status is 'verified' by a recorded live probe (scripts/probe_llm_parameters.py). Otherwise enabling it raises an error. 'Verified' means the API accepted the probed value on chat.completions.create (a tiny plain request); it does not mean the parameter improves consistency, and the structured-output parse path used by the pipeline was not separately probed. All parameters remain disabled (null) by default."
+    },
     "structured_output": "openai beta.chat.completions.parse with Pydantic response_format",
     "notes": "Run 1/2/Q1 were executed with no temperature, reasoning_effort, max token or seed parameter sent, so these nulls describe how those results were produced. LLM output is not guaranteed reproducible without a seed; entity/edge counts differed between Run 1 and Run 2."
   },
@@ -27,7 +34,14 @@
     "commit_date": "2026-09-08T01:31:56+07:00",
     "package": "graph_ragu 0.1.0",
     "requires_python": ">=3.10 (classifiers list 3.10-3.12)",
-    "installed": false,
-    "notes": "third_party/ is git-ignored, so this pin is the record of the exact RAGU version. Project Python is newer than RAGU's declared classifiers; Windows install compatibility is unverified."
+    "installed": true,
+    "install_check": {
+      "date": "2026-11-24",
+      "environment": "isolated venv outside the repo (%LOCALAPPDATA%/verifiable-semantic-rag/venv-ragu-py314), Python 3.14.4, Windows 11",
+      "method": "pip install ./third_party/RAGU (non-editable)",
+      "dependency_lock": "config/ragu_env_requirements.txt",
+      "result": "installed; imports and offline initialization succeeded; no API calls made"
+    },
+    "notes": "third_party/ is git-ignored, so this pin is the record of the exact RAGU version. RAGU was installed on Python 3.14.4 although its classifiers list 3.10-3.12; import, initialization and live runtime (two graph builds, querying) verified on 2026-11-24 (results/ragu_build_*.json, results/benchmark_answers_ragu.json)."
   }
 }

@@ -1,0 +1,99 @@
+{
+  "parameters": {
+    "fraction": 0.1,
+    "window_chunks": 132,
+    "per_type_target": 12,
+    "min_similarity": 0.6,
+    "min_lexical_coverage": 0.75,
+    "seed": 42
+  },
+  "data_hashes": {
+    "medical.json": "e15c3b8af5931610c005cbf465e58c2b9ff3b9fa83b7c4bfb042bd8343cdf002",
+    "medical_questions.json": "ca6ffc4217c892777bd3ba3009e5539716f3b3213aec9c1b04476cdf7c5fb620"
+  },
+  "window": {
+    "start_chunk": 100,
+    "end_chunk": 232,
+    "start_char": 79695,
+    "end_char": 185073,
+    "slice_chars": 105378,
+    "corpus_chars": 1052157
+  },
+  "questions_eligible_in_window": {
+    "Complex Reasoning": 46,
+    "Contextual Summarize": 30,
+    "Creative Generation": 3,
+    "Fact Retrieval": 132
+  },
+  "questions_selected": {
+    "Complex Reasoning": 12,
+    "Contextual Summarize": 12,
+    "Creative Generation": 3,
+    "Fact Retrieval": 12
+  },
+  "shortfall_vs_target": {
+    "Complex Reasoning": 0,
+    "Contextual Summarize": 0,
+    "Creative Generation": 9,
+    "Fact Retrieval": 0
+  },
+  "in_window_dropped_by_lexical_filter": {
+    "Complex Reasoning": 21,
+    "Contextual Summarize": 15,
+    "Creative Generation": 29,
+    "Fact Retrieval": 16
+  },
+  "selected_question_ids": [
+    "Medical-f6a94128",
+    "Medical-37f18801",
+    "Medical-16a39fa8",
+    "Medical-7dd235f1",
+    "Medical-705f9e89",
+    "Medical-6a5c89f3",
+    "Medical-3aa8a2c6",
+    "Medical-34a9155d",
+    "Medical-e7ebb96c",
+    "Medical-2d14639d",
+    "Medical-b2a64d4a",
+    "Medical-1c34ae24",
+    "Medical-024819a8",
+    "Medical-088c7ad0",
+    "Medical-1e74344c",
+    "Medical-251615ea",
+    "Medical-61a5ec94",
+    "Medical-78a99b6b",
+    "Medical-f38ec745",
+    "Medical-61c0e9bc",
+    "Medical-df2fbbd7",
+    "Medical-7d2a19f6",
+    "Medical-c9e77dca",
+    "Medical-3cc76c04",
+    "Medical-29982b18",
+    "Medical-4654807f",
+    "Medical-d446abb7",
+    "Medical-0535a6b1",
+    "Medical-54b3e97f",
+    "Medical-cf21d241",
+    "Medical-9c46dbea",
+    "Medical-78788ae0",
+    "Medical-5492a510",
+    "Medical-653c0da3",
+    "Medical-9b28edf9",
+    "Medical-3fb59b05",
+    "Medical-3b688fe1",
+    "Medical-b1ab4938",
+    "Medical-3d1b49a8"
+  ],
+  "similarity_deciles": [
+    0.5765,
+    0.6098,
+    0.6376,
+    0.6626,
+    0.6855,
+    0.7074,
+    0.7295,
+    0.7556,
+    0.794
+  ],
+  "note": "Window and sample chosen by embedding similarity (approximate). Slice corpus is easier than the full benchmark."
+}

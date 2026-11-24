@@ -7,6 +7,7 @@ import hashlib
 import json
 import os
 import shutil
+import time
 import uuid
 from dataclasses import asdict, dataclass, field
 from pathlib import Path
@@ -94,6 +95,7 @@ def save_artifacts(
     # Create isolated staging directory for atomic writes
     temp_dir = parent_dir / f".tmp_{target_dir.name}_{uuid.uuid4().hex[:8]}"
     temp_dir.mkdir(parents=True, exist_ok=False)
+    staged = False
 
     try:
         # 1. Serialize documents
@@ -238,26 +240,55 @@ def save_artifacts(
         )
         manifest_file = temp_dir / "manifest.json"
         manifest_file.write_text(manifest.to_json(), encoding="utf-8")
+        staged = True  # everything is written and hashed; from here on the staged copy must never be lost
 
-        # 7. Atomic directory swap
+        # 7. Atomic directory swap. On Windows, OneDrive or antivirus can briefly lock a fresh folder, so the
+        # rename is retried; if it still fails, the complete staged copy is KEPT and its path reported.
         if target_dir.exists():
             backup_dir = parent_dir / f".bak_{target_dir.name}_{uuid.uuid4().hex[:8]}"
-            os.rename(target_dir, backup_dir)
+            _rename_with_retry(target_dir, backup_dir)
             try:
-                os.rename(temp_dir, target_dir)
+                _rename_with_retry(temp_dir, target_dir)
                 shutil.rmtree(backup_dir, ignore_errors=True)
             except Exception:
                 if backup_dir.exists():
-                    os.rename(backup_dir, target_dir)
+                    _rename_with_retry(backup_dir, target_dir)
                 raise
         else:
-            os.rename(temp_dir, target_dir)
+            _rename_with_retry(temp_dir, target_dir)
 
         return target_dir
 
+    except OSError as error:
+        if staged:
+            raise ArtifactSaveError(
+                f"Artifacts were fully written and hash-verified in '{temp_dir}' but could not be moved to "
+                f"'{target_dir}' ({error}). The staged copy has been KEPT; rename it to the target folder "
+                "manually, or retry the save. No data was lost."
+            ) from error
+        raise
+
     finally:
-        if temp_dir.exists():
+        if temp_dir.exists() and not staged:
             shutil.rmtree(temp_dir, ignore_errors=True)
+
+
+class ArtifactSaveError(OSError):
+    """Raised when fully staged artifacts could not be moved into place; the staged copy is kept."""
+
+
+def _rename_with_retry(source: Path, target: Path, *, attempts: int = 8, first_delay: float = 0.25) -> None:
+    """os.rename with exponential back-off for transient Windows locks (WinError 5/32)."""
+    delay = first_delay
+    for attempt in range(1, attempts + 1):
+        try:
+            os.rename(source, target)
+            return
+        except PermissionError:
+            if attempt == attempts:
+                raise
+            time.sleep(delay)
+            delay = min(delay * 2, 4.0)
 
 
 def load_artifacts(

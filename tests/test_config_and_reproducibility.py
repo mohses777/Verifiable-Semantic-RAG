@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 import asyncio
+import json
+import tempfile
 import unittest
 from pathlib import Path
 from types import SimpleNamespace
@@ -8,6 +10,7 @@ from types import SimpleNamespace
 from src.core.config import (
     ConfigMismatchError,
     LLMSettings,
+    UnverifiedParameterError,
     build_run_configuration,
     get_llm_settings,
     load_experiment_config,
@@ -85,6 +88,45 @@ class ConfigTests(unittest.TestCase):
         self.assertEqual(snapshot["ragu"]["commit_sha"], load_experiment_config()["ragu"]["commit_sha"])
         self.assertEqual(snapshot["chunking"]["overlap"], 200)
         self.assertEqual(snapshot["retrieval"]["vector_top_k"], 5)
+
+
+class ParameterGateTests(unittest.TestCase):
+    def _config_with(self, **llm_overrides) -> str:
+        config = json.loads(json.dumps(load_experiment_config()))
+        for key, value in llm_overrides.items():
+            if key.startswith("status_"):
+                config["llm"]["parameter_support"][key[len("status_"):]]["status"] = value
+            else:
+                config["llm"][key] = value
+        handle = tempfile.NamedTemporaryFile("w", suffix=".json", delete=False, encoding="utf-8")
+        json.dump(config, handle)
+        handle.close()
+        self.addCleanup(Path(handle.name).unlink)
+        return handle.name
+
+    def test_enabling_an_unverified_parameter_is_rejected(self) -> None:
+        for name, value in (("temperature", 0.0), ("seed", 7), ("reasoning_effort", "low"), ("max_completion_tokens", 512)):
+            with self.assertRaises(UnverifiedParameterError, msg=name):
+                get_llm_settings(self._config_with(**{name: value, f"status_{name}": "unverified"}))
+
+    def test_verified_parameter_can_be_enabled_and_is_sent(self) -> None:
+        path = self._config_with(temperature=0.0, status_temperature="verified")
+        self.assertEqual(get_llm_settings(path).request_params(), {"temperature": 0.0})
+
+    def test_unsupported_parameter_cannot_be_enabled(self) -> None:
+        # Shipped config records temperature=0.0 as rejected by the API (probe, 2026-11-24).
+        with self.assertRaises(UnverifiedParameterError):
+            get_llm_settings(self._config_with(temperature=0.0))
+
+    def test_shipped_config_disables_all_parameters_and_records_probe_outcomes(self) -> None:
+        llm = load_experiment_config()["llm"]
+        for name in ("temperature", "seed", "reasoning_effort", "max_completion_tokens"):
+            self.assertIsNone(llm[name], name)
+        support = llm["parameter_support"]
+        self.assertEqual(support["temperature"]["status"], "unsupported")
+        for name in ("seed", "reasoning_effort", "max_completion_tokens"):
+            self.assertEqual(support[name]["status"], "verified", name)
+        self.assertEqual(get_llm_settings().request_params(), {})
 
 
 class ProviderTests(unittest.TestCase):

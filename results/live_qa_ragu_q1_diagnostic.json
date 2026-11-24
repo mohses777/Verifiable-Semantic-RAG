@@ -1,0 +1,427 @@
+{
+  "question": "According to the RAGU paper, what performance does RAGU achieve on GraphRAG-Bench (Medical), and how does it compare with HippoRAG 2?",
+  "answer_text": "On GraphRAG-Bench (Medical), RAGU\u2019s Answer Correctness scores were 54.2% on Fact Retrieval, 53.7% on Complex Reasoning, 64.1% on Contextual Summarize, and 59.0% on Creative Generation. Compared with HippoRAG 2, RAGU scored lower on the first three tasks (HippoRAG 2: 72.4%, 68.4%, and 65.0%) but higher on Creative Generation (56.9%). RAGU also had higher Creative Generation Coverage and Faithfulness: 57.4% and 34.2%, versus HippoRAG 2\u2019s 34.7% and 26.6%.",
+  "insufficient_evidence": false,
+  "confidence_explanation": "The benchmark table gives both systems\u2019 results using Meno-Lite-0.1 as the index LLM. The HippoRAG 2 row\u2019s first two scores are visually run together in the supplied text; their interpretation as 72.4 and 68.4 is corroborated by the paper\u2019s prose comparison.",
+  "supporting_chunk_ids": [
+    "922a692238adfe2db666bb65:s3:c0"
+  ],
+  "evidence_references": [
+    {
+      "chunk_id": "922a692238adfe2db666bb65:s3:c0",
+      "document_id": "922a692238adfe2db666bb65",
+      "source_path": "C:\\Users\\New User\\OneDrive\\Documents\\Moses Projects\\Verifiable-semantic-rag\\data\\papers\\komarov_2026_ragu.pdf",
+      "page_number": 4,
+      "quote": "Fact Retr. Complex Reas. Contextual Summ. Creative Gen.\nSystem Index LLM AC AC AC Cov AC Cov Faith",
+      "claim": "The table\u2019s task and metric columns identify the Answer Correctness and Creative Generation Coverage and Faithfulness values."
+    },
+    {
+      "chunk_id": "922a692238adfe2db666bb65:s3:c0",
+      "document_id": "922a692238adfe2db666bb65",
+      "source_path": "C:\\Users\\New User\\OneDrive\\Documents\\Moses Projects\\Verifiable-semantic-rag\\data\\papers\\komarov_2026_ragu.pdf",
+      "page_number": 4,
+      "quote": "HippoRAG 2 Meno-Lite-0.1 72.468.4 65.051.7 56.9 34.7 26.6\nRAGU Qwen2.5-7B 54.1 54.6 64.973.258.1 56.435.1\nRAGU Meno-Lite-0.1 54.2 53.7 64.1 71.159.0 57.434.2",
+      "claim": "With Meno-Lite-0.1, RAGU scores 54.2, 53.7, and 64.1 on the first three Answer Correctness columns and 59.0 on Creative Generation; HippoRAG 2 scores 72.4, 68.4, 65.0, and 56.9, respectively. The Creative Generation Coverage and Faithfulness scores are 57.4 and 34.2 for RAGU, and 34.7 and 26.6 for HippoRAG 2."
+    }
+  ],
+  "retrieved_chunk_count": 10,
+  "graph_entities_retrieved": 188,
+  "graph_relationships_retrieved": 13,
+  "retrieval_config": {
+    "vector_top_k": 5,
+    "graph_traversal_depth": 1,
+    "max_total_chunks": 10,
+    "vector_weight": 0.7,
+    "graph_weight": 0.3
+  },
+  "model_id": "gpt-6-luna",
+  "execution_time_ms": 19259.095899993554,
+  "is_mocked": false,
+  "document_count": 1,
+  "token_usage": {
+    "query_embedding": {
+      "prompt_tokens": 37,
+      "total_tokens": 37,
+      "actual_cost_usd": 5e-06
+    },
+    "answer_generation": {
+      "prompt_tokens": 5140,
+      "completion_tokens": 1503,
+      "total_tokens": 6643,
+      "actual_cost_usd": 0.001266
+    },
+    "total_actual_cost_usd": 0.00127
+  },
+  "query_matched_entities": [
+    "GraphRAG",
+    "GraphRAG-Bench",
+    "GraphRAG-Bench (Medical)",
+    "HippoRAG",
+    "HippoRAG 2",
+    "RAGU"
+  ],
+  "seed_entities": [
+    "GraphRAG",
+    "GraphRAG-Bench",
+    "GraphRAG-Bench (Medical)",
+    "HippoRAG",
+    "HippoRAG 2",
+    "RAGU",
+    "Answer Correctness (AC)",
+    "Complex Reasoning",
+    "Context Relevancy",
+    "Contextual Summarize",
+    "Coverage",
+    "Creative Generation",
+    "Evidence Recall (ER)",
+    "Fact Retrieval",
+    "Faithfulness",
+    "google/gemini-3-flash-preview",
+    "gpt-oss-20b",
+    "Lite-0.1",
+    "Qwen2.5-7B",
+    "ROUGE-L",
+    "Answer Correctness",
+    "Evidence Recall",
+    "gpt-4o-mini",
+    "LightRAG",
+    "Meno-Lite-0.1 (7 B)",
+    "our system",
+    "EmbeddingStore._save_data",
+    "HippoRAG 2 paper",
+    "HippoRAG.py",
+    "HippoRAG.save_igraph",
+    "Pickle",
+    "Qwen2.5-3B",
+    "RAGU configurations",
+    "repository",
+    "requirements.txt",
+    "SQLite",
+    "Table 7",
+    "torch",
+    "vLLM",
+    "AC",
+    "extraction LLMs",
+    "ICL",
+    "single-pass free-form extraction",
+    "typed multi-step consolidation",
+    "validation toggles",
+    "Def",
+    "HippoRAG 2 (GPT)",
+    "HM",
+    "IE benchmark",
+    "LightRAG (GPT)",
+    "NaiveRAG",
+    "NER",
+    "poRAG 2",
+    "RAGU (GPT)",
+    "RAGU (Ours)",
+    "RDef",
+    "RE"
+  ],
+  "run_configuration": {
+    "config_version": "1.0.0",
+    "recorded_at": "2026-11-24T11:20:44.080921+00:00",
+    "is_mocked": false,
+    "provider": "openai",
+    "base_url": "https://api.openai.com/v1",
+    "llm": {
+      "model": "gpt-6-luna",
+      "temperature": null,
+      "reasoning_effort": null,
+      "max_completion_tokens": null,
+      "seed": null
+    },
+    "llm_request_params_sent": {},
+    "llm_parameter_support": {
+      "temperature": {
+        "status": "unsupported",
+        "probed_value": 0.0,
+        "probed_on": "2026-11-24",
+        "evidence": "results/llm_parameter_probe.json",
+        "note": "API returned 400 unsupported_value: only the default (1) is supported by this model, so temperature cannot be used to reduce variance."
+      },
+      "seed": {
+        "status": "verified",
+        "probed_value": 12345,
+        "verified_on": "2026-11-24",
+        "evidence": "results/llm_parameter_probe.json",
+        "note": "Accepted by chat.completions.create. No system_fingerprint was returned, so backend version cannot be tracked, and acceptance does not imply deterministic output."
+      },
+      "reasoning_effort": {
+        "status": "verified",
+        "probed_value": "low",
+        "verified_on": "2026-11-24",
+        "evidence": "results/llm_parameter_probe.json",
+        "note": "Only the value 'low' was probed. Other values (for example 'none', assumed by the RAGU adapter) are NOT verified."
+      },
+      "max_completion_tokens": {
+        "status": "verified",
+        "probed_value": 256,
+        "verified_on": "2026-11-24",
+        "evidence": "results/llm_parameter_probe.json",
+        "note": "Accepted. A cap that is too small may truncate reasoning plus structured output; choose it deliberately."
+      },
+      "note": "A parameter may only be set to a non-null value above once its status is 'verified' by a recorded live probe (scripts/probe_llm_parameters.py). Otherwise enabling it raises an error. 'Verified' means the API accepted the probed value on chat.completions.create (a tiny plain request); it does not mean the parameter improves consistency, and the structured-output parse path used by the pipeline was not separately probed. All parameters remain disabled (null) by default."
+    },
+    "embedding": {
+      "model": "text-embedding-3-large",
+      "dimensions": 3072,
+      "batch_size": 100
+    },
+    "pricing": {
+      "file": "config/pricing.json",
+      "source": "OpenAI Developers pricing page (developers.openai.com/api/docs/pricing), screenshot supplied by the researcher on 2026-11-24",
+      "recorded_on": "2026-11-24",
+      "usd_per_tokens": 1000000,
+      "rates": {
+        "gpt-6-luna": {
+          "input": 0.1,
+          "output": 0.5
+        },
+        "text-embedding-3-large": {
+          "input": 0.13,
+          "output": 0.0
+        }
+      }
+    },
+    "code": {
+      "git_commit": "1a0ca56a250b7bfd70856ff511b03fc660d3b281",
+      "git_dirty": true
+    },
+    "environment": {
+      "python": "3.14.4",
+      "platform": "Windows-11-10.0.26200-SP0",
+      "packages": {
+        "openai": "2.54.0",
+        "pydantic": "2.13.4",
+        "networkx": "3.7",
+        "numpy": "2.5.2",
+        "pypdf": "5.9.0"
+      }
+    },
+    "ragu": {
+      "repository": "https://github.com/RaguTeam/RAGU.git",
+      "checkout_path": "third_party/RAGU",
+      "tag": "v0.1.0",
+      "commit_sha": "abd3f2958c186dc624bbd42560ad6e1e7033efaf",
+      "commit_date": "2026-09-08T01:31:56+07:00",
+      "package": "graph_ragu 0.1.0",
+      "requires_python": ">=3.10 (classifiers list 3.10-3.12)",
+      "installed": true,
+      "install_check": {
+        "date": "2026-11-24",
+        "environment": "isolated venv outside the repo (%LOCALAPPDATA%/verifiable-semantic-rag/venv-ragu-py314), Python 3.14.4, Windows 11",
+        "method": "pip install ./third_party/RAGU (non-editable)",
+        "dependency_lock": "config/ragu_env_requirements.txt",
+        "result": "installed; imports and offline initialization succeeded; no API calls made"
+      },
+      "notes": "third_party/ is git-ignored, so this pin is the record of the exact RAGU version. RAGU was installed on Python 3.14.4 although its classifiers list 3.10-3.12; import/init works but runtime behaviour (extraction, indexing, querying) is not yet verified.",
+      "checkout_head": "abd3f2958c186dc624bbd42560ad6e1e7033efaf",
+      "checkout_matches_pin": true
+    },
+    "retrieval": {
+      "vector_top_k": 5,
+      "graph_traversal_depth": 1,
+      "max_total_chunks": 10,
+      "vector_weight": 0.7,
+      "graph_weight": 0.3
+    }
+  },
+  "artifact_build_configuration": {},
+  "retrieved_chunks": [
+    {
+      "chunk_id": "922a692238adfe2db666bb65:s2:c3",
+      "page_number": 3,
+      "combined_score": 0.753237,
+      "vector_score": 0.647481,
+      "graph_score": 1.0,
+      "retrieval_sources": [
+        "vector",
+        "graph"
+      ]
+    },
+    {
+      "chunk_id": "922a692238adfe2db666bb65:s9:c1",
+      "page_number": 10,
+      "combined_score": 0.703846,
+      "vector_score": 0.627344,
+      "graph_score": 0.882353,
+      "retrieval_sources": [
+        "vector",
+        "graph"
+      ]
+    },
+    {
+      "chunk_id": "922a692238adfe2db666bb65:s4:c1",
+      "page_number": 5,
+      "combined_score": 0.661045,
+      "vector_score": 0.616619,
+      "graph_score": 0.764706,
+      "retrieval_sources": [
+        "vector",
+        "graph"
+      ]
+    },
+    {
+      "chunk_id": "922a692238adfe2db666bb65:s3:c1",
+      "page_number": 4,
+      "combined_score": 0.635637,
+      "vector_score": 0.630742,
+      "graph_score": 0.647059,
+      "retrieval_sources": [
+        "vector",
+        "graph"
+      ]
+    },
+    {
+      "chunk_id": "922a692238adfe2db666bb65:s2:c4",
+      "page_number": 3,
+      "combined_score": 0.610549,
+      "vector_score": 0.620112,
+      "graph_score": 0.588235,
+      "retrieval_sources": [
+        "vector",
+        "graph"
+      ]
+    },
+    {
+      "chunk_id": "922a692238adfe2db666bb65:s9:c3",
+      "page_number": 10,
+      "combined_score": 0.211765,
+      "vector_score": 0.0,
+      "graph_score": 0.705882,
+      "retrieval_sources": [
+        "graph"
+      ]
+    },
+    {
+      "chunk_id": "922a692238adfe2db666bb65:s0:c1",
+      "page_number": 1,
+      "combined_score": 0.194118,
+      "vector_score": 0.0,
+      "graph_score": 0.647059,
+      "retrieval_sources": [
+        "graph"
+      ]
+    },
+    {
+      "chunk_id": "922a692238adfe2db666bb65:s2:c2",
+      "page_number": 3,
+      "combined_score": 0.176471,
+      "vector_score": 0.0,
+      "graph_score": 0.588235,
+      "retrieval_sources": [
+        "graph"
+      ]
+    },
+    {
+      "chunk_id": "922a692238adfe2db666bb65:s3:c0",
+      "page_number": 4,
+      "combined_score": 0.176471,
+      "vector_score": 0.0,
+      "graph_score": 0.588235,
+      "retrieval_sources": [
+        "graph"
+      ]
+    },
+    {
+      "chunk_id": "922a692238adfe2db666bb65:s6:c4",
+      "page_number": 7,
+      "combined_score": 0.141176,
+      "vector_score": 0.0,
+      "graph_score": 0.470588,
+      "retrieval_sources": [
+        "graph"
+      ]
+    }
+  ],
+  "answer_diagnostics": {
+    "raw_model_output": {
+      "answer_text": "On GraphRAG-Bench (Medical), RAGU\u2019s Answer Correctness scores were 54.2% on Fact Retrieval, 53.7% on Complex Reasoning, 64.1% on Contextual Summarize, and 59.0% on Creative Generation. Compared with HippoRAG 2, RAGU scored lower on the first three tasks (HippoRAG 2: 72.4%, 68.4%, and 65.0%) but higher on Creative Generation (56.9%). RAGU also had higher Creative Generation Coverage and Faithfulness: 57.4% and 34.2%, versus HippoRAG 2\u2019s 34.7% and 26.6%.",
+      "evidence_references": [
+        {
+          "chunk_id": "922a692238adfe2db666bb65:s3:c0",
+          "document_id": "922a692238adfe2db666bb65",
+          "source_path": "",
+          "page_number": 4,
+          "quote": "Fact Retr. Complex Reas. Contextual Summ. Creative Gen.\nSystem Index LLM AC AC AC Cov AC Cov Faith",
+          "claim": "The table\u2019s task and metric columns identify the Answer Correctness and Creative Generation Coverage and Faithfulness values."
+        },
+        {
+          "chunk_id": "922a692238adfe2db666bb65:s3:c0",
+          "document_id": "922a692238adfe2db666bb65",
+          "source_path": "",
+          "page_number": 4,
+          "quote": "HippoRAG 2 Meno-Lite-0.1 72.468.4 65.051.7 56.9 34.7 26.6\nRAGU Qwen2.5-7B 54.1 54.6 64.973.258.1 56.435.1\nRAGU Meno-Lite-0.1 54.2 53.7 64.1 71.159.0 57.434.2",
+          "claim": "With Meno-Lite-0.1, RAGU scores 54.2, 53.7, and 64.1 on the first three Answer Correctness columns and 59.0 on Creative Generation; HippoRAG 2 scores 72.4, 68.4, 65.0, and 56.9, respectively. The Creative Generation Coverage and Faithfulness scores are 57.4 and 34.2 for RAGU, and 34.7 and 26.6 for HippoRAG 2."
+        }
+      ],
+      "supporting_chunk_ids": [
+        "922a692238adfe2db666bb65:s3:c0"
+      ],
+      "insufficient_evidence": false,
+      "confidence_explanation": "The benchmark table gives both systems\u2019 results using Meno-Lite-0.1 as the index LLM. The HippoRAG 2 row\u2019s first two scores are visually run together in the supplied text; their interpretation as 72.4 and 68.4 is corroborated by the paper\u2019s prose comparison."
+    },
+    "raw_citation_count": 2,
+    "accepted_citation_count": 2,
+    "rejected_citation_count": 0,
+    "raw_insufficient_evidence": false,
+    "final_insufficient_evidence": false,
+    "fail_closed": false,
+    "fail_closed_reason": null,
+    "rejection_summary": {},
+    "citations": [
+      {
+        "index": 0,
+        "chunk_id": "922a692238adfe2db666bb65:s3:c0",
+        "quote": "Fact Retr. Complex Reas. Contextual Summ. Creative Gen.\nSystem Index LLM AC AC AC Cov AC Cov Faith",
+        "claim": "The table\u2019s task and metric columns identify the Answer Correctness and Creative Generation Coverage and Faithfulness values.",
+        "model_supplied_provenance": {
+          "document_id": "922a692238adfe2db666bb65",
+          "source_path": "",
+          "page_number": 4
+        },
+        "status": "accepted",
+        "reason": null,
+        "authoritative_provenance": {
+          "document_id": "922a692238adfe2db666bb65",
+          "source_path": "C:\\Users\\New User\\OneDrive\\Documents\\Moses Projects\\Verifiable-semantic-rag\\data\\papers\\komarov_2026_ragu.pdf",
+          "page_number": 4
+        },
+        "provenance_overridden": true
+      },
+      {
+        "index": 1,
+        "chunk_id": "922a692238adfe2db666bb65:s3:c0",
+        "quote": "HippoRAG 2 Meno-Lite-0.1 72.468.4 65.051.7 56.9 34.7 26.6\nRAGU Qwen2.5-7B 54.1 54.6 64.973.258.1 56.435.1\nRAGU Meno-Lite-0.1 54.2 53.7 64.1 71.159.0 57.434.2",
+        "claim": "With Meno-Lite-0.1, RAGU scores 54.2, 53.7, and 64.1 on the first three Answer Correctness columns and 59.0 on Creative Generation; HippoRAG 2 scores 72.4, 68.4, 65.0, and 56.9, respectively. The Creative Generation Coverage and Faithfulness scores are 57.4 and 34.2 for RAGU, and 34.7 and 26.6 for HippoRAG 2.",
+        "model_supplied_provenance": {
+          "document_id": "922a692238adfe2db666bb65",
+          "source_path": "",
+          "page_number": 4
+        },
+        "status": "accepted",
+        "reason": null,
+        "authoritative_provenance": {
+          "document_id": "922a692238adfe2db666bb65",
+          "source_path": "C:\\Users\\New User\\OneDrive\\Documents\\Moses Projects\\Verifiable-semantic-rag\\data\\papers\\komarov_2026_ragu.pdf",
+          "page_number": 4
+        },
+        "provenance_overridden": true
+      }
+    ],
+    "request": {
+      "params_sent": {
+        "model": "gpt-6-luna"
+      },
+      "response": {
+        "response_model": "gpt-6-luna",
+        "finish_reason": "stop",
+        "system_fingerprint": null,
+        "refusal": null,
+        "reasoning_tokens": 790
+      }
+    }
+  }
+}

@@ -2,7 +2,9 @@
 
 from __future__ import annotations
 
+import asyncio
 import json
+import tempfile
 import unittest
 from pathlib import Path
 
@@ -156,6 +158,83 @@ class PipelineIntegrationTests(unittest.TestCase):
         self.assertIn("extraction", cost)
 
 
+class ConcurrentExtractionTests(unittest.TestCase):
+    """Concurrent extraction must match sequential output and stop on the first failure."""
+
+    def setUp(self) -> None:
+        handle = tempfile.NamedTemporaryFile("w", suffix=".txt", delete=False, encoding="utf-8")
+        handle.write("\n\n".join(f"Paragraph {i}: " + ("GraphRAG retrieves evidence. " * 40) for i in range(12)))
+        handle.close()
+        self.addCleanup(Path(handle.name).unlink)
+        self.FIXTURE = Path(handle.name)
+
+    def _pipeline(self, concurrency: int, provider) -> DocumentProcessingPipeline:
+        return DocumentProcessingPipeline(
+            embedding_client=EmbeddingClient(MockEmbeddingProvider(), model_id="text-embedding-3-large", dimensions=4),
+            extractor=SemanticExtractor(provider, model_id="gpt-6-luna"),
+            is_mocked=True,
+            extraction_concurrency=concurrency,
+        )
+
+    def test_invalid_concurrency_rejected(self) -> None:
+        with self.assertRaises(ValueError):
+            self._pipeline(0, MockExtractionProvider())
+
+    def test_concurrent_run_matches_sequential_run(self) -> None:
+        class Delayed(MockExtractionProvider):
+            async def extract(self, **kwargs):
+                await asyncio.sleep(0.01)
+                return await super().extract(**kwargs)
+
+        seq = asyncio.run(self._pipeline(1, Delayed()).process_document(self.FIXTURE))
+        conc = asyncio.run(self._pipeline(4, Delayed()).process_document(self.FIXTURE))
+        self.assertGreaterEqual(len(seq.extractions), 10)
+        self.assertEqual([c.chunk.chunk_id for c in seq.extractions], [c.chunk.chunk_id for c in conc.extractions])
+        self.assertEqual(set(seq.knowledge_graph.graph.nodes), set(conc.knowledge_graph.graph.nodes))
+        self.assertEqual(seq.summary.entity_count, conc.summary.entity_count)
+
+    def test_first_failure_cancels_remaining_extractions(self) -> None:
+        started: list[int] = []
+
+        class Failing:
+            async def extract(self, *, model, messages, schema):
+                started.append(1)
+                await asyncio.sleep(0)
+                raise RuntimeError("boom")
+
+        with self.assertRaises(RuntimeError):
+            asyncio.run(self._pipeline(2, Failing()).process_document(self.FIXTURE))
+        # The document has 10+ chunks, but only the bounded in-flight calls may have started.
+        self.assertGreaterEqual(len(started), 1)
+        self.assertLessEqual(len(started), 2)
+
+    def test_concurrency_actually_overlaps_requests(self) -> None:
+        state = {"now": 0, "peak": 0}
+
+        class Tracking(MockExtractionProvider):
+            async def extract(self, **kwargs):
+                state["now"] += 1
+                state["peak"] = max(state["peak"], state["now"])
+                await asyncio.sleep(0.01)
+                state["now"] -= 1
+                return await super().extract(**kwargs)
+
+        asyncio.run(self._pipeline(3, Tracking()).process_document(self.FIXTURE))
+        self.assertEqual(state["peak"], 3)  # bounded at exactly the configured limit
+
+
+
+class EstimatorCalibrationTests(unittest.TestCase):
+    def test_extraction_estimate_is_close_to_the_measured_slice_build(self) -> None:
+        from src.core.models import TextChunk
+
+        # The measured run: 132 chunks of about 1,000 characters each cost $0.143365 (run 2) / $0.145711 (run 1).
+        chunk = TextChunk(chunk_id="c", document_id="d", text="x" * 997, source_path="s", source_type="txt",
+                          page_number=None, section_index=0, start_char=0, end_char=997,
+                          document_start_char=0, document_end_char=997, metadata={})
+        estimate = estimate_processing_cost([chunk] * 132)
+        self.assertAlmostEqual(estimate["total_estimated_cost_usd"], 0.1435, delta=0.1435 * 0.25)
+
+
 if __name__ == "__main__":
     unittest.main()
-

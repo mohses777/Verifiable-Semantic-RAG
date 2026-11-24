@@ -38,6 +38,15 @@ from src.retrieval.hybrid import (
 )
 
 
+# Calibrated from measured answers (2026-11-24): 39 benchmark questions averaged 8,633 prompt tokens with up to 10
+# evidence chunks (about 840 per chunk including graph relationships) and 946 completion tokens; the Q1 runs used
+# 1,503 to 2,038 completion tokens. The completion figure is set conservatively high because it feeds cost approvals.
+# Earlier constants (300 per chunk, 300 completion) were far too low.
+QA_PROMPT_TOKENS_PER_CHUNK = 840
+QA_PROMPT_BASE_TOKENS = 250
+QA_COMPLETION_TOKENS = 1_500
+
+
 @dataclass(frozen=True)
 class QAPipelineSummary:
     """Machine-readable record of a question-answering run with full provenance."""
@@ -61,6 +70,8 @@ class QAPipelineSummary:
     seed_entities: list[str] = field(default_factory=list)
     run_configuration: dict[str, Any] = field(default_factory=dict)
     artifact_build_configuration: dict[str, Any] = field(default_factory=dict)
+    retrieved_chunks: list[dict[str, Any]] = field(default_factory=list)
+    answer_diagnostics: dict[str, Any] = field(default_factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
         return asdict(self)
@@ -178,6 +189,18 @@ class QuestionAnsweringPipeline:
             seed_entities=list(retrieval_bundle.seed_entities),
             run_configuration=run_configuration,
             artifact_build_configuration=dict(artifacts.summary.run_configuration),
+            retrieved_chunks=[
+                {
+                    "chunk_id": item.chunk.chunk_id,
+                    "page_number": item.chunk.page_number,
+                    "combined_score": item.combined_score,
+                    "vector_score": item.vector_score,
+                    "graph_score": item.graph_score,
+                    "retrieval_sources": list(item.retrieval_sources),
+                }
+                for item in retrieval_bundle.evidence_chunks
+            ],
+            answer_diagnostics=answer_result.diagnostics,
         )
         return answer_result, summary
 
@@ -349,8 +372,8 @@ def _qa_cli() -> None:
 
         if args.estimate_cost:
             # When artifacts are pre-loaded, chunk embedding and extraction are $0.00
-            qa_prompt_tokens = config.max_total_chunks * 300 + 250
-            qa_completion_tokens = 300
+            qa_prompt_tokens = config.max_total_chunks * QA_PROMPT_TOKENS_PER_CHUNK + QA_PROMPT_BASE_TOKENS
+            qa_completion_tokens = QA_COMPLETION_TOKENS
             query_embedding_tokens = max(1, len(args.question.split()) * 2)
             embedding_model = os.environ.get(
                 "EMBEDDING_MODEL",
@@ -422,8 +445,8 @@ def _qa_cli() -> None:
                 embedding_model=os.environ.get("EMBEDDING_MODEL", "text-embedding-3-large"),
                 llm_model=est_llm_model,
             )
-            qa_prompt_tokens = config.max_total_chunks * 300 + 250
-            qa_completion_tokens = 300
+            qa_prompt_tokens = config.max_total_chunks * QA_PROMPT_TOKENS_PER_CHUNK + QA_PROMPT_BASE_TOKENS
+            qa_completion_tokens = QA_COMPLETION_TOKENS
             llm_pricing = get_model_pricing(est_llm_model)
             qa_cost = llm_pricing.input_cost(qa_prompt_tokens) + llm_pricing.output_cost(qa_completion_tokens)
             base_est["qa_generation"] = {
@@ -463,6 +486,14 @@ def _qa_cli() -> None:
             f"  [{idx}] chunk_id={ref['chunk_id']} | doc={ref['document_id']} | "
             f"page={ref['page_number']} | quote=\"{ref['quote']}\""
         )
+    diag = qa_summary.answer_diagnostics
+    if diag:
+        print(
+            f"Citation verification: raw={diag['raw_citation_count']} accepted={diag['accepted_citation_count']} "
+            f"rejected={diag['rejected_citation_count']} fail_closed={diag['fail_closed']}"
+        )
+        if diag["rejection_summary"]:
+            print(f"  Rejections: {json.dumps(diag['rejection_summary'])}")
 
     if args.output:
         qa_summary.save(args.output)

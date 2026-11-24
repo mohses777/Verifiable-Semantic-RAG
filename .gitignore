@@ -5,3 +5,17 @@ __pycache__/
 .pytest_cache/
 *.log
 third_party/
+
+# RAGU LLM response caches (may hold raw model output)
+data/ragu/**/llm_cache/
+
+# Third-party benchmark data: licence unresolved, do not commit
+data/benchmarks/
+
+# Graph builds over third-party or licence-unresolved text, and very large vector files (rebuild with the scripts)
+data/ragu/
+data/processed/graphrag_bench_slice/
+
+# Evaluator detailed outputs contain benchmark questions, reference answers and corpus text (licence unresolved).
+# Text-free per-sample scores are kept in results/benchmark_per_sample_scores.json instead.
+results/benchmark_eval/**/evaluator_output.json
