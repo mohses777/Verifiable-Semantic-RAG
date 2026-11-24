@@ -525,3 +525,92 @@ output per million tokens) was confirmed against the OpenAI pricing page. The
   `results/pipeline_graphrag_bench_slice_run1_artifacts_lost.json`.
 - Cost estimators were recalibrated from measured runs (see `src/pipeline/runner.py` and `src/pipeline/qa.py`); the
   earlier constants (100 completion tokens per extracted chunk, 300 per answer) were far below the measured values.
+
+## Developer reference (moved from the README on 2026-11-25)
+
+These sections were moved verbatim from `README.md` when it was restructured for submission; nothing was
+changed except heading levels.
+
+### Strict separation of mocked vs. live experiment artifacts
+
+To maintain research integrity, every generated JSON artifact explicitly records
+`"is_mocked": true | false`:
+
+| Artifact | Mode (`is_mocked`) | Scope & Purpose | Recorded Results |
+| :--- | :---: | :--- | :--- |
+| `results/development_papers_summary.json` | `true` (Mocked) | Zero-cost structural pipeline check across 3 PDFs (55 pages, 262 chunks) using synthetic dummy providers. | 0 live API calls, 0 entities/edges (synthetic no-op extractor), 2,572.4 ms local runtime. **Not an experimental result.** |
+| `results/live_smoke_test_ragu.json` | `false` (**Live OpenAI API — Run 1**) | Historical initial smoke test on `data/papers/komarov_2026_ragu.pdf` (10 pages, 54 chunks) prior to Slice 6 persistence. | **54/54** 3,072-d embeddings; **785** entity mentions (**528** unique graph entities); **639** relationship claims (**92** explicit verified graph edges); **$0.049618 USD** *pre-run estimate* (token counts and cost were estimated at the superseded $1.25/$5.00 LLM rates, not measured from API usage; about $0.0060 at current rates); **0** API errors; **1,087,967.369 ms** (~18.13 min) runtime. |
+| `results/live_ragu_persisted_summary.json` & `data/processed/komarov_2026_ragu/` | `false` (**Live OpenAI API — Run 2, Persisted**) | Independent live reprocessing of `data/papers/komarov_2026_ragu.pdf` with full Slice 6 artifact persistence (`vectors.npz`, `extractions.json`, `chunks.json`, `documents.json`, `manifest.json`). | **54/54** 3,072-d embeddings; **741** entity mentions (**491** unique graph entities); **595** relationship claims (**80** explicit verified graph edges); **~$0.0496 USD** *estimate* (same superseded-rate estimate; measured API spend not recorded, check the OpenAI billing dashboard); **0** API errors; **1,247,197.133 ms** (~20.79 min) runtime. |
+| `results/live_qa_ragu_q1.json` | `false` (**Live OpenAI API — QA Experiment Q1**) | First live hybrid retrieval and evidence-backed question-answering experiment over pre-loaded `data/processed/komarov_2026_ragu/` artifacts (0 re-extraction calls). | **10** hybrid chunks + **13** graph relationships retrieved; **3/3** citations verified verbatim on Pages 3 & 4 (`s3:c0` Table 1 caption, `s2:c3`, `s2:c4`); **37** query embedding tokens + **5,140** prompt / **2,038** completion tokens; **$0.001538 USD** cost computed from measured token usage at `config/pricing.json` rates; **33,475.21 ms** (~33.5 s) runtime. |
+| `results/live_qa_ragu_q1_rerun_post_seed_fix.json` | `false` (**Live OpenAI API — Q1 rerun after seed fix**) | Same question, artifacts and retrieval settings as Q1, rerun after the word-boundary seed fix (working tree dirty, base commit `1a0ca56`). Original Q1 preserved. | Retrieval identical (**10** chunks, **188** entities, **13** relationships; same **5,140** prompt tokens); **1,622** completion tokens; **$0.00133 USD**; **23,135 ms**; **`insufficient_evidence=true`, 0/0 verified citations** (all model citations failed verification; cause not recorded). Shows run-to-run LLM variance with no seed/temperature set. |
+| `results/live_qa_ragu_q1_diagnostic.json` | `false` (**Live OpenAI API — Q1 diagnostic run**) | Third sample of the same question with default parameters and the new `answer_diagnostics` (working tree dirty, base commit `1a0ca56`). | Retrieval counts and prompt tokens identical (**5,140**); **1,503** completion tokens (**790** reasoning); **$0.00127 USD**; **19.3 s**; **2/2 citations accepted**, both from `s3:c0` (table header and rows). The earlier fail-closed failure did **not** recur, so its cause remains undetermined. |
+| `results/ragu_build_komarov_2026.json` | `false` (**Live OpenAI API — RAGU graph build**) | RAGU `v0.1.0` (`abd3f29`) built over the same Komarov text with `gpt-6-luna` + `text-embedding-3-large`, RAGU's documented example configuration, $1.00 cap (dirty tree, base `1a0ca56`). Graph in `data/ragu/komarov_2026_ragu/`. | **563** entities, **600** relations, **57** communities, **48** chunks; **258** chat + **6** embedding calls (all chat via `parse`); **1.80M** prompt / **0.53M** completion tokens (measured); **$0.451742 USD**; **17.2 min** (4 concurrent); 0 errors. Not directly comparable with this project's graph or its estimated build cost. |
+| `results/ragu_q1_local.json` | `false` (**Live OpenAI API — RAGU local search, Q1**) | RAGU `LocalSearchEngine` (defaults) on the RAGU-built graph, same question as Q1 (cap $0.02, dirty tree, base `1a0ca56`). One sample. | **20** entities, **75** relations, **35** chunks retrieved; **13,695** prompt / **612** completion tokens (measured); **$0.00168 USD**; **8.3 s**; free-text answer with **no citations**. Same headline figures as this project's answers; larger context budget (about 2.7x tokens), so not a controlled comparison. |
+
+Model pricing used for all cost figures lives in `config/pricing.json` (source and date recorded there; both the `gpt-6-luna` and `text-embedding-3-large` rates were verified against OpenAI's pricing pages on 2026-11-24).
+
+### Reproducibility configuration
+
+- `config/experiment.json`: provider, base URL, `gpt-6-luna` request settings (`temperature`, `reasoning_effort`, `max_completion_tokens`, `seed`; `null` = not sent), embedding model and dimensions, and the pinned RAGU version (tag `v0.1.0`, commit `abd3f2958c186dc624bbd42560ad6e1e7033efaf`).
+- `config/pricing.json`: verified model prices with source and date.
+- Environment variables (`LLM_MODEL`, `EMBEDDING_MODEL`, `EMBEDDING_DIMENSION`, `OPENAI_BASE_URL`) must agree with the config or the run aborts; models are never substituted silently.
+- Every new QA result and artifact manifest embeds a `run_configuration` snapshot (models, request params, pricing, git commit and dirty flag, Python/package versions, chunking/retrieval settings, RAGU pin check) plus measured token usage and cost. Commit before an experiment so `git_dirty` is `false`.
+
+### Citation diagnostics and parameter controls
+
+- QA results include `answer_diagnostics` (raw model output, per-citation accept/reject with reasons, fail-closed flag, request parameters sent) and `retrieved_chunks`. Citation acceptance is strict and fail-closed; diagnostics only explain rejections.
+- `temperature`, `seed`, `reasoning_effort`, `max_completion_tokens` can only be enabled in `config/experiment.json` after `scripts/probe_llm_parameters.py --execute` (paid, tiny) has verified API support. All are currently off.
+- `python scripts/analyze_quote_fragility.py` runs the zero-cost PDF quote-fragility analysis.
+
+### Persistent Artifact Storage Layout (`src.storage.artifacts`)
+
+Artifacts are persisted in a portable, human-inspectable format without Python pickle:
+
+```text
+data/processed/<artifact-name>/
+├── manifest.json     # Schema version (1.0.0), model metadata, and SHA-256 integrity checksums
+├── documents.json    # SourceDocument records with page sections and checksums
+├── chunks.json       # TextChunk records with exact character/page provenance
+├── extractions.json  # ChunkExtraction records with entities, relationships, and support levels
+└── vectors.npz       # NumPy float32 vector array and chunk IDs (allow_pickle=False)
+```
+
+#### Integrity & Reproducibility Guarantees
+- **Atomic Writes**: Writes first to an isolated staging directory, verifies file hashes, and performs an atomic directory swap to prevent corrupted partial artifacts.
+- **SHA-256 Validation**: On load, `load_artifacts` recomputes and verifies the hash of every artifact file against `manifest.json`.
+- **Model & Dimension Checks**: Rejects artifacts if the vector dimension or embedding model does not match the active configuration.
+- **Zero-Cost Loading**: Loading artifacts reconstructs `InMemoryVectorIndex` and `KnowledgeGraph` in memory without making any embedding or extraction API calls.
+
+#### Saving & Loading Artifacts in Document Processing (`scripts/process_papers.py`)
+
+Process documents and save artifacts to disk:
+
+```powershell
+python scripts/process_papers.py --papers data/papers/komarov_2026_ragu.pdf --save-artifacts data/processed/komarov_2026_ragu
+```
+
+Load existing artifacts from disk (zero API calls):
+
+```powershell
+python scripts/process_papers.py --load-artifacts data/processed/komarov_2026_ragu
+```
+
+#### Answering Questions with Pre-Loaded Artifacts (`scripts/answer_question.py`)
+
+Query pre-loaded artifacts without re-embedding or re-extracting chunks:
+
+```powershell
+python scripts/answer_question.py --load-artifacts data/processed/komarov_2026_ragu --question "What is the primary contribution of RAGU?"
+```
+
+Estimate QA token usage and cost for pre-loaded artifacts (zero API calls):
+
+```powershell
+python scripts/answer_question.py --load-artifacts data/processed/komarov_2026_ragu --question "What is the primary contribution of RAGU?" --estimate-cost
+```
+
+Run QA with mocked providers on sample fixture (zero API calls):
+
+```powershell
+python scripts/answer_question.py --mock --papers tests/fixtures/sample_article.pdf --question "How does GraphRAG connect passages?"
+```
