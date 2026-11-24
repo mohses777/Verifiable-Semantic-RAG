@@ -1,0 +1,65 @@
+{
+  "question": "According to the RAGU paper, what performance does RAGU achieve on GraphRAG-Bench (Medical), and how does it compare with HippoRAG 2?",
+  "answer_text": "On GraphRAG-Bench (Medical), RAGU\u2019s Answer Correctness (AC) is 54.2% on Fact Retrieval, 53.7% on Complex Reasoning, 64.1% on Contextual Summarize, and 59.0% on Creative Generation. Compared with HippoRAG 2, RAGU scores lower on the first three tasks\u2014by 18.2, 14.7, and 0.9 percentage points, respectively\u2014but higher on Creative Generation by 2.1 points (59.0% vs. 56.9%). RAGU also has higher Creative Generation Coverage (57.4% vs. 34.7%) and Faithfulness (34.2% vs. 26.6%).",
+  "insufficient_evidence": false,
+  "confidence_explanation": "The paper\u2019s table and accompanying results text provide the task-level AC scores and the comparison with HippoRAG 2, including Creative Generation Coverage and Faithfulness.",
+  "supporting_chunk_ids": [
+    "922a692238adfe2db666bb65:s3:c0",
+    "922a692238adfe2db666bb65:s2:c3",
+    "922a692238adfe2db666bb65:s2:c4"
+  ],
+  "evidence_references": [
+    {
+      "chunk_id": "922a692238adfe2db666bb65:s3:c0",
+      "document_id": "922a692238adfe2db666bb65",
+      "source_path": "C:\\Users\\New User\\OneDrive\\Documents\\Moses Projects\\Verifiable-semantic-rag\\data\\papers\\komarov_2026_ragu.pdf",
+      "page_number": 4,
+      "quote": "Table 1: Generation quality on GraphRAG-Bench (Medical domain). AC = Answer Correctness, Cov = Coverage,\nFaith = Faithfulness (all\u00d7100).",
+      "claim": "The reported generation quality is for GraphRAG-Bench (Medical), and AC, Coverage, and Faithfulness are percentages."
+    },
+    {
+      "chunk_id": "922a692238adfe2db666bb65:s2:c3",
+      "document_id": "922a692238adfe2db666bb65",
+      "source_path": "C:\\Users\\New User\\OneDrive\\Documents\\Moses Projects\\Verifiable-semantic-rag\\data\\papers\\komarov_2026_ragu.pdf",
+      "page_number": 3,
+      "quote": "HippoRAG 2 leads: its\npersonalized PageRank pins down single facts\n(AC 72.4 vs. 54.2 for RAGU on Fact Retrieval,\n\u2206=\u221218.2 pp). As tasks demand broad synthe-\nsis rather than chain-following, the gap closes\nmonotonically\u2014Complex Reasoning (\u221214.7 pp),\nContextual Summarize (\u22120.9 pp, parity)\u2014andre-\nverseson Creative Generation, where RAGU wins\nAC (59.0 vs. 56.9) and Faithfulness (34.2 vs. 26.6).",
+      "claim": "HippoRAG 2 leads on Fact Retrieval, Complex Reasoning, and Contextual Summarize; RAGU leads on Creative Generation AC and Faithfulness, with the stated point differences."
+    },
+    {
+      "chunk_id": "922a692238adfe2db666bb65:s2:c4",
+      "document_id": "922a692238adfe2db666bb65",
+      "source_path": "C:\\Users\\New User\\OneDrive\\Documents\\Moses Projects\\Verifiable-semantic-rag\\data\\papers\\komarov_2026_ragu.pdf",
+      "page_number": 3,
+      "quote": "RAGU leads through-\nout (57.4 vs. 34.7 on Creative Generation).",
+      "claim": "RAGU\u2019s Creative Generation Coverage is 57.4 versus 34.7 for HippoRAG 2."
+    }
+  ],
+  "retrieved_chunk_count": 10,
+  "graph_entities_retrieved": 188,
+  "graph_relationships_retrieved": 13,
+  "retrieval_config": {
+    "vector_top_k": 5,
+    "graph_traversal_depth": 1,
+    "max_total_chunks": 10,
+    "vector_weight": 0.7,
+    "graph_weight": 0.3
+  },
+  "model_id": "gpt-6-luna",
+  "execution_time_ms": 33475.21080000297,
+  "is_mocked": false,
+  "document_count": 1,
+  "token_usage": {
+    "query_embedding": {
+      "prompt_tokens": 37,
+      "total_tokens": 37,
+      "actual_cost_usd": 5e-06
+    },
+    "answer_generation": {
+      "prompt_tokens": 5140,
+      "completion_tokens": 2038,
+      "total_tokens": 7178,
+      "actual_cost_usd": 0.001533
+    },
+    "total_actual_cost_usd": 0.001538
+  }
+}

@@ -8,6 +8,7 @@ from importlib import import_module
 from time import perf_counter
 from typing import Any, Protocol
 
+from src.core.config import get_llm_settings, validate_environment
 from src.core.models import TextChunk
 from src.generation.schemas import EvidenceCitation, GeneratedAnswer
 from src.retrieval.hybrid import HybridRetrievalBundle
@@ -29,7 +30,14 @@ class StructuredAnswerProvider(Protocol):
 class OpenAIStructuredAnswerProvider:
     """OpenAI Chat Completions structured-output provider for answer generation."""
 
-    def __init__(self, *, api_key: str, base_url: str | None = None, client: Any | None = None) -> None:
+    def __init__(
+        self,
+        *,
+        api_key: str,
+        base_url: str | None = None,
+        client: Any | None = None,
+        request_params: dict[str, Any] | None = None,
+    ) -> None:
         if not api_key:
             raise ValueError("OPENAI_API_KEY is required for answer generation")
         if client is None:
@@ -39,6 +47,9 @@ class OpenAIStructuredAnswerProvider:
                 raise RuntimeError("OpenAI answer generation requires the 'openai' package.") from error
             client = async_openai(api_key=api_key, base_url=base_url)
         self._client = client
+        self._request_params = (
+            dict(request_params) if request_params is not None else get_llm_settings().request_params()
+        )
         self.last_usage: dict[str, int] | None = None
 
     async def generate(
@@ -52,6 +63,7 @@ class OpenAIStructuredAnswerProvider:
             model=model,
             messages=messages,
             response_format=schema,
+            **self._request_params,
         )
         usage = getattr(response, "usage", None)
         if usage is not None:
@@ -91,6 +103,7 @@ class EvidenceBackedAnswerGenerator:
         cls,
         provider: StructuredAnswerProvider | None = None,
     ) -> "EvidenceBackedAnswerGenerator":
+        validate_environment()
         active_provider = provider or OpenAIStructuredAnswerProvider(
             api_key=os.environ.get("OPENAI_API_KEY", ""),
             base_url=os.environ.get("OPENAI_BASE_URL"),

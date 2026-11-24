@@ -138,7 +138,7 @@ Executed on 2026-11-18 against the live official OpenAI API (`is_mocked: false`)
 - **Relationships Extracted**: 639 relationship claims across 54 chunks, filtered by application provenance rules to **92 explicit directed edges** between confirmed grounded entities.
 - **Execution Time**: `1,087,967.369 ms` (~18.13 minutes across 54 sequential structured extraction requests and batched embedding generation).
 - **Error Count**: 0 errors. All 54 chunks processed successfully without retries.
-- **Financial Cost**: Total execution cost was **$0.049618 USD** ($0.001622 embeddings + $0.047996 extraction), within the user-approved $0.10 USD budget cap.
+- **Financial Cost (estimate, not measured)**: `results/live_smoke_test_ragu.json` records **$0.049618 USD** ($0.001622 embeddings + $0.047996 extraction). Its token counts are the pre-run estimator's heuristics (`estimate_processing_cost`), copied into the report, and were priced at the superseded $1.25/$5.00 per-million LLM rates. They are not API-reported usage. At the current `gpt-6-luna` rates ($0.10/$0.50, `config/pricing.json`) the same estimate is about $0.0060. Measured spend for this run was not recorded; check the OpenAI billing dashboard if an exact figure is needed.
 - **Artifact**: Full machine-readable record preserved at `results/live_smoke_test_ragu.json`.
 
 ## Stage 2, vertical slice 5: hybrid retrieval and evidence-backed answer generation
@@ -240,7 +240,7 @@ persistent vector database (e.g. SQLite/DuckDB, FAISS, or Qdrant) may be evaluat
 chunk/page provenance retention, vector dimension and value preservation, knowledge
 graph reconstruction, SHA-256 tampering rejection, model/dimension mismatch rejection,
 and offline question-answering.
-Total test suite now comprises **32 passing unit and integration tests**.
+Test suite at this slice comprised **32 passing unit and integration tests**.
 
 ## Stage 2, live persisted run (Run 2): Komarov et al. (2026) artifact generation
 
@@ -268,7 +268,7 @@ remains untouched):
   verbatim quote and entity-endpoint grounding to **80 explicit directed edges** (compared
   with 639 claims / 92 explicit edges in Run 1).
 - **Execution Time**: `1,247,197.133 ms` (~20.79 minutes).
-- **Estimated Spend**: ~$0.0496 USD ($0.001622 embeddings + ~$0.0480 extraction).
+- **Estimated Spend**: ~$0.0496 USD, the same superseded-rate pre-run estimate as Run 1 (not measured API usage).
 - **Persisted Artifacts & SHA-256 Checksums (`data/processed/komarov_2026_ragu/`)**:
   - `manifest.json` (`schema_version: 1.0.0`, `is_mocked: false`)
   - `documents.json`: `dfce68695260f237a5f2fddc99a8c8afbe69d4c56d9298a180dad72137a3eb84`
@@ -278,3 +278,91 @@ remains untouched):
 - **Verification**: Reloaded via `load_artifacts("data/processed/komarov_2026_ragu")` with
   zero API calls; all 4 file hashes, 54 chunks, 54×3,072 vectors, 491 graph nodes, and 80
   explicit edges with page and quote provenance verified.
+
+## Stage 2, Slice 7: first live question-answering experiment
+
+Executed on 2026-11-18 against pre-loaded `data/processed/komarov_2026_ragu/` artifacts
+(`is_mocked: false`, saved to `results/live_qa_ragu_q1.json`).
+
+### Experimental Question
+> *"According to the RAGU paper, what performance does RAGU achieve on GraphRAG-Bench (Medical), and how does it compare with HippoRAG 2?"*
+
+### Recorded Measurements & Actual API Cost
+- **Chunk Re-embedding / Re-extraction Calls**: **`0`** ($0.00).
+- **Hybrid Retrieval (`vector_top_k=5`, `graph_traversal_depth=1`, `max_total_chunks=10`)**:
+  - **10** deduplicated evidence chunks retrieved.
+  - **188** entity mentions and **13** explicit graph relationships retrieved.
+- **Query Embedding (`text-embedding-3-large`)**: **37** actual tokens (`$0.000005 USD`).
+- **Answer Generation (`gpt-6-luna`)**: **5,140** actual prompt tokens, **2,038** actual
+  completion tokens (**7,178** total tokens, `$0.001533 USD`).
+- **Total Actual Cost**: **`$0.001538 USD`**, computed from measured token usage at the `config/pricing.json` rates (`gpt-6-luna` $0.10/$0.50 per million tokens, confirmed on the OpenAI pricing page on 2026-11-24).
+- **End-to-End QA Latency**: **`33,475.21 ms`** (~33.48 seconds — a **37× speedup** over
+  full document extraction).
+
+### Answer Correctness & Citation Verification Audit
+The generated answer reported:
+- **RAGU (Meno-Lite-0.1) Answer Correctness (AC)** on GraphRAG-Bench (Medical):
+  **54.2%** on Fact Retrieval, **53.7%** on Complex Reasoning, **64.1%** on Contextual
+  Summarize, and **59.0%** on Creative Generation.
+- **Comparison with HippoRAG 2**:
+  - Fact Retrieval: `-18.2` percentage points (`54.2%` vs. `72.4%`).
+  - Complex Reasoning: `-14.7` percentage points (`53.7%` vs. `68.4%`).
+  - Contextual Summarize: `-0.9` percentage points (`64.1%` vs. `65.0%`).
+  - Creative Generation AC: `+2.1` percentage points (`59.0%` vs. `56.9%`).
+  - Creative Generation Coverage: `57.4%` vs. `34.7%`.
+  - Creative Generation Faithfulness: `34.2%` vs. `26.6%`.
+
+All three returned `EvidenceCitation` records passed application-level chunk allow-list
+and verbatim quotation verification against the source PDF:
+1. `922a692238adfe2db666bb65:s3:c0` (**Page 4**, chars `0..995`): the verified quote is the
+   Table 1 caption only (identifying the table as GraphRAG-Bench Medical generation quality).
+   The numerical values in the answer are supported by citations 2 and 3, not by table rows.
+2. `922a692238adfe2db666bb65:s2:c3` (**Page 3**, chars `2389..3387`): Section 3.2 text
+   reporting the exact cross-over deltas (`-18.2 pp`, `-14.7 pp`, `-0.9 pp`, `59.0 vs. 56.9`,
+   and Faithfulness `34.2 vs. 26.6`).
+3. `922a692238adfe2db666bb65:s2:c4` (**Page 3**, chars `3187..4130`): Section 3.2 continuation
+   reporting Creative Generation Coverage (`57.4 vs. 34.7`).
+
+### Methodological Observation for Graph Seed Matching
+Offline inspection of `match_entities_in_text()` for Q1 showed that alongside the true
+target entities (`RAGU`, `GraphRAG-Bench`, `GraphRAG-Bench (Medical)`, `HippoRAG 2`),
+two short 2-letter acronym nodes (`AC` and `RE`) matched as case-folded substrings inside
+the query words `"achieve"` and `"compare"`. This was fixed on 2026-11-24: `match_entities_in_text()` now requires word-boundary matches
+(regression test added). On the Q1 question the seeds are now `GraphRAG`, `GraphRAG-Bench`,
+`GraphRAG-Bench (Medical)`, `HippoRAG`, `HippoRAG 2`, `RAGU`. Note that Q1's recorded results
+were produced before this fix, so rerunning it could retrieve different graph evidence.
+
+## Reproducibility configuration (2026-11-24)
+
+`config/experiment.json` is the version-controlled record of model settings
+(`gpt-6-luna`: `temperature`, `reasoning_effort`, `max_completion_tokens` and `seed` are all
+`null`, i.e. not sent, which is how Run 1, Run 2 and Q1 were produced), the embedding model
+and dimension, and the pinned RAGU version. `validate_environment()` aborts if `.env`
+values contradict it. `build_run_configuration()` snapshots the effective settings, pricing,
+git commit and dirty flag, Python/package versions, chunking, retrieval and the RAGU pin
+check into every new QA result (`run_configuration`) and artifact manifest.
+`QAPipelineSummary` also records `query_matched_entities` and `seed_entities` (the graph
+seeds), and `artifact_build_configuration` (how the loaded artifacts were built).
+Extraction and embedding providers now accumulate API-reported usage, so future ingestion
+runs record *measured* token usage and cost (`token_usage.*.measured: true`) instead of
+estimates. The new manifest fields are additive: the existing Run 2 artifacts load
+unchanged (verified by test) and simply have empty `run_configuration`/`token_usage`.
+Because the LLM `seed` is unset, outputs are not guaranteed to be bit-reproducible.
+
+### Q1 before/after the seed fix (offline, no API calls)
+
+For the Q1 question the old substring matcher produced seeds
+`AC, GraphRAG, GraphRAG-Bench, GraphRAG-Bench (Medical), HippoRAG, HippoRAG 2, RAGU, RE,
+poRAG 2`; the fixed matcher produces `GraphRAG, GraphRAG-Bench, GraphRAG-Bench (Medical),
+HippoRAG, HippoRAG 2, RAGU`. Three spurious seeds (`AC`, `RE`, and `poRAG 2`, which matched
+inside "HippoRAG 2") were removed, so graph expansion will differ. `results/live_qa_ragu_q1.json`
+is preserved unmodified as the historical pre-fix experiment. A separate post-fix rerun
+(`results/live_qa_ragu_q1_rerun_post_seed_fix.json`) is prepared but not executed; it needs
+a cost estimate and approval. The built-in `--estimate-cost` figure for it is about $0.0005, but it assumes 300 completion tokens whereas Q1 actually used 2,038 (likely reasoning tokens), so budget roughly $0.0015 to $0.003 for the rerun.
+
+## Cost configuration (2026-11-24)
+
+All rates are read from `config/pricing.json` via `src/core/pricing.py`; a model with no
+configured price raises an error instead of falling back. `gpt-6-luna` ($0.10 input / $0.50
+output per million tokens) was confirmed against the OpenAI pricing page. The
+`text-embedding-3-large` rate ($0.13 per million tokens) was likewise confirmed on its OpenAI model page on 2026-11-24.

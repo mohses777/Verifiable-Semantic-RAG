@@ -102,6 +102,28 @@ class KnowledgeExtractionAndGraphTests(unittest.TestCase):
         graph.add_extraction(extraction)
         self.assertEqual(graph.relationships_for("RAG"), [])
 
+    def test_entity_seed_matching_respects_word_boundaries(self) -> None:
+        graph = KnowledgeGraph()
+        text = "AC and RE are metrics; GraphRAG-Bench (Medical) is a benchmark."
+        result = ExtractionResult(
+            entities=[
+                ExtractedEntity(name="AC", entity_type="metric", evidence="AC"),
+                ExtractedEntity(name="RE", entity_type="metric", evidence="RE"),
+                ExtractedEntity(
+                    name="GraphRAG-Bench (Medical)", entity_type="benchmark", evidence="GraphRAG-Bench (Medical)"
+                ),
+            ],
+            relationships=[],
+        )
+        graph.add_extraction(run(SemanticExtractor(FakeProvider(result), model_id="gpt-6-luna").extract_chunk(
+            source_chunk("chunk-seed", text, 1)
+        )))
+        matched = graph.match_entities_in_text(
+            "What does RAGU achieve on GraphRAG-Bench (Medical) and how does it compare?"
+        )
+        self.assertEqual(matched, ["GraphRAG-Bench (Medical)"])
+        self.assertEqual(graph.match_entities_in_text("Is AC higher than RE?"), ["AC", "RE"])
+
 
 if __name__ == "__main__":
     unittest.main()

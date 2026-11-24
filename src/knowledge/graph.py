@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import re
 from collections import deque
 from dataclasses import dataclass
 from typing import Iterable
@@ -98,13 +99,17 @@ class KnowledgeGraph:
         return sorted(names, key=_key)
 
     def match_entities_in_text(self, text: str) -> list[str]:
-        """Find graph entities whose normalized names appear in the query text."""
+        """Find graph entities whose normalized names appear in the query text.
+
+        Matches must align to word boundaries, so a short entity such as ``AC``
+        does not match inside ``achieve``.
+        """
         normalized_text = _key(text)
         if not normalized_text:
             return []
         matched: list[str] = []
         for node_key, attrs in self.graph.nodes(data=True):
-            if node_key and node_key in normalized_text:
+            if node_key and re.search(rf"(?<!\w){re.escape(node_key)}(?!\w)", normalized_text):
                 matched.append(attrs["name"])
         return sorted(matched, key=_key)
 

@@ -58,6 +58,8 @@ class ArtifactManifest:
     is_mocked: bool
     documents: list[dict[str, Any]]
     checksums: dict[str, str]
+    token_usage: dict[str, Any] = field(default_factory=dict)
+    run_configuration: dict[str, Any] = field(default_factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
         return asdict(self)
@@ -231,6 +233,8 @@ def save_artifacts(
             is_mocked=artifacts.summary.is_mocked,
             documents=[asdict(d) for d in artifacts.summary.documents],
             checksums=checksums,
+            token_usage=artifacts.summary.token_usage,
+            run_configuration=artifacts.summary.run_configuration,
         )
         manifest_file = temp_dir / "manifest.json"
         manifest_file.write_text(manifest.to_json(), encoding="utf-8")
@@ -468,6 +472,8 @@ def load_artifacts(
             "embedding_model": model_id,
             "embedding_dimensions": dim,
         },
+        token_usage=manifest_data.get("token_usage", {}),
+        run_configuration=manifest_data.get("run_configuration", {}),
     )
 
     return PipelineArtifacts(

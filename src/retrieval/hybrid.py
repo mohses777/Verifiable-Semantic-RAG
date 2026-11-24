@@ -55,6 +55,8 @@ class HybridRetrievalBundle:
     graph_entities: tuple[EntityEvidence, ...]
     graph_relationships: tuple[RelationshipEvidence, ...]
     config: HybridRetrievalConfig
+    query_matched_entities: tuple[str, ...] = ()
+    seed_entities: tuple[str, ...] = ()
 
 
 class HybridRetriever:
@@ -91,7 +93,8 @@ class HybridRetriever:
         seed_names: list[str] = []
         seen_seeds: set[str] = set()
 
-        for name in self.knowledge_graph.match_entities_in_text(query):
+        query_matched = tuple(self.knowledge_graph.match_entities_in_text(query))
+        for name in query_matched:
             key = name.casefold()
             if key not in seen_seeds:
                 seen_seeds.add(key)
@@ -185,4 +188,6 @@ class HybridRetriever:
             graph_entities=tuple(entity_evidences),
             graph_relationships=tuple(relationship_evidences),
             config=active_config,
+            query_matched_entities=query_matched,
+            seed_entities=tuple(seed_names),
         )

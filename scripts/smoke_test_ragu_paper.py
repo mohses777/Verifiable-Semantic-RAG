@@ -150,7 +150,7 @@ async def run_smoke_test(
             extraction = await extractor.extract_chunk(chunk)
             extractions.append(extraction)
             knowledge_graph.add_extraction(extraction)
-            # Rough running spend tracker ($1.25/M input, $5.00/M output)
+            # Rough running spend guard only (flat per-chunk placeholder, not measured usage)
             running_cost += 0.001
             if i % 10 == 0 or i == len(chunks):
                 print(f"      Progress: {i}/{len(chunks)} chunks processed...")

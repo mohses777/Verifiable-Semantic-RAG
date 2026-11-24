@@ -6,6 +6,8 @@ import os
 from importlib import import_module
 from typing import Any, Protocol
 
+from src.core.config import validate_environment
+
 
 class EmbeddingProvider(Protocol):
     """Minimal async provider interface used by the application."""
@@ -28,6 +30,8 @@ class OpenAIEmbeddingProvider:
             client = async_openai(api_key=api_key, base_url=base_url)
         self._client = client
         self.last_usage: dict[str, int] | None = None
+        # Measured usage accumulated over every call made by this provider instance.
+        self.total_usage: dict[str, int] = {"calls": 0, "prompt_tokens": 0, "total_tokens": 0}
 
     async def embed(self, texts: list[str], *, model: str) -> list[list[float]]:
         if not texts:
@@ -39,6 +43,9 @@ class OpenAIEmbeddingProvider:
                 "prompt_tokens": int(getattr(usage, "prompt_tokens", 0)),
                 "total_tokens": int(getattr(usage, "total_tokens", 0)),
             }
+            self.total_usage["calls"] += 1
+            self.total_usage["prompt_tokens"] += self.last_usage["prompt_tokens"]
+            self.total_usage["total_tokens"] += self.last_usage["total_tokens"]
         return [list(item.embedding) for item in response.data]
 
 
@@ -59,6 +66,7 @@ class EmbeddingClient:
 
     @classmethod
     def from_environment(cls, provider: EmbeddingProvider | None = None, *, batch_size: int = 100) -> "EmbeddingClient":
+        validate_environment()
         model_id = os.environ.get("EMBEDDING_MODEL", "")
         dimensions_text = os.environ.get("EMBEDDING_DIMENSION", "")
         try:

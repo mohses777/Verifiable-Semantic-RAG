@@ -1,0 +1,19 @@
+{
+  "currency": "USD",
+  "per_tokens": 1000000,
+  "recorded_on": "2026-11-24",
+  "source": "OpenAI Developers pricing page (developers.openai.com/api/docs/pricing), screenshot supplied by the researcher on 2026-11-24",
+  "models": {
+    "gpt-6-luna": {
+      "input": 0.10,
+      "output": 0.50,
+      "cached_input": 0.01,
+      "verified_against_source": true
+    },
+    "text-embedding-3-large": {
+      "input": 0.13,
+      "verified_against_source": true,
+      "note": "Confirmed on the OpenAI text-embedding-3-large model page (price $0.13 per 1M tokens), screenshot supplied by the researcher on 2026-11-24."
+    }
+  }
+}

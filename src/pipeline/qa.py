@@ -12,7 +12,9 @@ from pathlib import Path
 from time import perf_counter
 from typing import Any, Sequence
 
+from src.core.config import build_run_configuration
 from src.core.models import TextChunk
+from src.core.pricing import get_model_pricing
 from src.embeddings.client import EmbeddingClient
 from src.generation.answering import (
     EvidenceBackedAnswerGenerator,
@@ -55,6 +57,10 @@ class QAPipelineSummary:
     is_mocked: bool
     document_count: int = 0
     token_usage: dict[str, Any] = field(default_factory=dict)
+    query_matched_entities: list[str] = field(default_factory=list)
+    seed_entities: list[str] = field(default_factory=list)
+    run_configuration: dict[str, Any] = field(default_factory=dict)
+    artifact_build_configuration: dict[str, Any] = field(default_factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
         return asdict(self)
@@ -120,12 +126,37 @@ class QuestionAnsweringPipeline:
         elapsed_ms = (perf_counter() - started) * 1_000
 
         token_usage: dict[str, Any] = {}
+        actual_cost = 0.0
         embed_usage = getattr(artifacts.retriever.client.provider, "last_usage", None)
         if embed_usage is not None:
-            token_usage["query_embedding"] = dict(embed_usage)
+            e_tokens = int(embed_usage.get("total_tokens", embed_usage.get("prompt_tokens", 0)))
+            e_cost = get_model_pricing(artifacts.retriever.client.model_id).input_cost(e_tokens)
+            actual_cost += e_cost
+            token_usage["query_embedding"] = {
+                **dict(embed_usage),
+                "actual_cost_usd": round(e_cost, 6),
+            }
         answer_usage = getattr(self.answer_generator.provider, "last_usage", None)
         if answer_usage is not None:
-            token_usage["answer_generation"] = dict(answer_usage)
+            p_tokens = int(answer_usage.get("prompt_tokens", 0))
+            c_tokens = int(answer_usage.get("completion_tokens", 0))
+            llm_pricing = get_model_pricing(self.answer_generator.model_id)
+            a_cost = llm_pricing.input_cost(p_tokens) + llm_pricing.output_cost(c_tokens)
+            actual_cost += a_cost
+            token_usage["answer_generation"] = {
+                **dict(answer_usage),
+                "actual_cost_usd": round(a_cost, 6),
+            }
+        if token_usage:
+            token_usage["total_actual_cost_usd"] = round(actual_cost, 6)
+
+        run_configuration = build_run_configuration(
+            llm_model=answer_result.model_id,
+            embedding_model=artifacts.retriever.client.model_id,
+            embedding_dimensions=artifacts.retriever.client.dimensions,
+            is_mocked=self.is_mocked or artifacts.summary.is_mocked,
+            retrieval=asdict(active_config),
+        )
 
         summary = QAPipelineSummary(
             question=question,
@@ -143,6 +174,10 @@ class QuestionAnsweringPipeline:
             is_mocked=self.is_mocked or artifacts.summary.is_mocked,
             document_count=artifacts.summary.document_count,
             token_usage=token_usage,
+            query_matched_entities=list(retrieval_bundle.query_matched_entities),
+            seed_entities=list(retrieval_bundle.seed_entities),
+            run_configuration=run_configuration,
+            artifact_build_configuration=dict(artifacts.summary.run_configuration),
         )
         return answer_result, summary
 
@@ -325,8 +360,9 @@ def _qa_cli() -> None:
                 "LLM_MODEL",
                 artifacts.summary.model_configuration.get("llm_model", "gpt-6-luna"),
             )
-            embedding_cost = (query_embedding_tokens / 1_000_000) * 0.13
-            qa_cost = (qa_prompt_tokens / 1_000_000) * 1.25 + (qa_completion_tokens / 1_000_000) * 5.00
+            embedding_cost = get_model_pricing(embedding_model).input_cost(query_embedding_tokens)
+            llm_pricing = get_model_pricing(llm_model)
+            qa_cost = llm_pricing.input_cost(qa_prompt_tokens) + llm_pricing.output_cost(qa_completion_tokens)
             cost_summary = {
                 "source": "pre_loaded_artifacts",
                 "loaded_chunks": len(artifacts.chunks),
@@ -380,14 +416,16 @@ def _qa_cli() -> None:
             for path in paper_paths:
                 doc = ingest_file(path)
                 all_chunks.extend(chunk_document(doc))
+            est_llm_model = os.environ.get("LLM_MODEL", "gpt-6-luna")
             base_est = estimate_processing_cost(
                 all_chunks,
                 embedding_model=os.environ.get("EMBEDDING_MODEL", "text-embedding-3-large"),
-                llm_model=os.environ.get("LLM_MODEL", "gpt-6-luna"),
+                llm_model=est_llm_model,
             )
             qa_prompt_tokens = config.max_total_chunks * 300 + 250
             qa_completion_tokens = 300
-            qa_cost = (qa_prompt_tokens / 1_000_000) * 1.25 + (qa_completion_tokens / 1_000_000) * 5.00
+            llm_pricing = get_model_pricing(est_llm_model)
+            qa_cost = llm_pricing.input_cost(qa_prompt_tokens) + llm_pricing.output_cost(qa_completion_tokens)
             base_est["qa_generation"] = {
                 "estimated_prompt_tokens": qa_prompt_tokens,
                 "estimated_completion_tokens": qa_completion_tokens,
@@ -413,6 +451,9 @@ def _qa_cli() -> None:
 
     print(f"Question: {qa_summary.question}")
     print(f"Mode: {'MOCKED' if qa_summary.is_mocked else 'LIVE API'}")
+    print(f"Execution Time: {qa_summary.execution_time_ms:.1f}ms")
+    if qa_summary.token_usage:
+        print(f"Token Usage & Cost: {json.dumps(qa_summary.token_usage)}")
     print(f"Insufficient Evidence: {qa_summary.insufficient_evidence}")
     print(f"Answer:\n  {qa_summary.answer_text}")
     print(f"Confidence:\n  {qa_summary.confidence_explanation}")

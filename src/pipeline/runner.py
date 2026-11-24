@@ -12,7 +12,9 @@ from pathlib import Path
 from time import perf_counter
 from typing import Any, Sequence
 
+from src.core.config import build_run_configuration
 from src.core.models import SourceDocument, TextChunk
+from src.core.pricing import get_model_pricing
 from src.embeddings.client import EmbeddingClient, EmbeddingProvider
 from src.embeddings.index import InMemoryVectorIndex, VectorIndex
 from src.embeddings.pipeline import SemanticRetriever
@@ -62,6 +64,8 @@ class PipelineSummary:
     execution_time_ms: float
     is_mocked: bool
     model_configuration: dict[str, Any] = field(default_factory=dict)
+    token_usage: dict[str, Any] = field(default_factory=dict)
+    run_configuration: dict[str, Any] = field(default_factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
         return asdict(self)
@@ -88,19 +92,56 @@ class PipelineArtifacts:
     summary: PipelineSummary
 
 
+def measured_processing_usage(
+    embedding_provider: Any, extraction_provider: Any, *, embedding_model: str, llm_model: str
+) -> dict[str, Any]:
+    """Cost of a run computed from API-reported usage; empty for mocked providers.
+
+    Unlike ``estimate_processing_cost`` this only reports tokens the API returned.
+    """
+    usage: dict[str, Any] = {}
+    total = 0.0
+    embed = getattr(embedding_provider, "total_usage", None)
+    if embed is not None:
+        cost = get_model_pricing(embedding_model).input_cost(int(embed.get("total_tokens", 0)))
+        usage["embedding"] = {**embed, "measured": True, "cost_usd": round(cost, 6)}
+        total += cost
+    extract = getattr(extraction_provider, "total_usage", None)
+    if extract is not None:
+        pricing = get_model_pricing(llm_model)
+        cost = pricing.input_cost(int(extract.get("prompt_tokens", 0))) + pricing.output_cost(
+            int(extract.get("completion_tokens", 0))
+        )
+        usage["extraction"] = {**extract, "measured": True, "cost_usd": round(cost, 6)}
+        total += cost
+    if usage:
+        usage["total_measured_cost_usd"] = round(total, 6)
+    return usage
+
+
 def estimate_processing_cost(
     chunks: Sequence[TextChunk],
     *,
     embedding_model: str = "text-embedding-3-large",
     llm_model: str = "gpt-6-luna",
-    embedding_rate_per_million: float = 0.13,
-    llm_prompt_rate_per_million: float = 1.25,
-    llm_completion_rate_per_million: float = 5.00,
+    embedding_rate_per_million: float | None = None,
+    llm_prompt_rate_per_million: float | None = None,
+    llm_completion_rate_per_million: float | None = None,
 ) -> dict[str, Any]:
     """Estimate token use and financial cost for processing a set of chunks.
 
-    Rates default to standard published OpenAI API pricing guidelines.
+    Rates default to the version-controlled values in ``config/pricing.json`` for
+    the given models; an explicit rate argument overrides the config. A model with
+    no configured pricing raises ``KeyError`` rather than guessing.
     """
+    if embedding_rate_per_million is None:
+        embedding_rate_per_million = get_model_pricing(embedding_model).input
+    if llm_prompt_rate_per_million is None or llm_completion_rate_per_million is None:
+        llm_pricing = get_model_pricing(llm_model)
+        if llm_prompt_rate_per_million is None:
+            llm_prompt_rate_per_million = llm_pricing.input
+        if llm_completion_rate_per_million is None:
+            llm_completion_rate_per_million = llm_pricing.output
     total_characters = sum(len(c.text) for c in chunks)
     estimated_input_tokens = total_characters // 4
 
@@ -232,6 +273,20 @@ class DocumentProcessingPipeline:
         explicit_rel_count = self.knowledge_graph.graph.number_of_edges()
         unique_entity_count = len(self.knowledge_graph.graph.nodes)
 
+        token_usage = measured_processing_usage(
+            self.embedding_client.provider,
+            self.extractor.provider,
+            embedding_model=self.embedding_client.model_id,
+            llm_model=self.extractor.model_id,
+        )
+        run_configuration = build_run_configuration(
+            llm_model=self.extractor.model_id,
+            embedding_model=self.embedding_client.model_id,
+            embedding_dimensions=self.embedding_client.dimensions,
+            is_mocked=self.is_mocked,
+            chunking=asdict(self.chunking_config),
+        )
+
         summary = PipelineSummary(
             document_count=len(documents),
             page_count=sum(len(d.sections) for d in documents),
@@ -248,6 +303,8 @@ class DocumentProcessingPipeline:
                 "embedding_model": self.embedding_client.model_id,
                 "embedding_dimensions": self.embedding_client.dimensions,
             },
+            token_usage=token_usage,
+            run_configuration=run_configuration,
         )
 
         return PipelineArtifacts(

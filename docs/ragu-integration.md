@@ -73,6 +73,20 @@ normal chat, Pydantic parse, forced function calling with
 `reasoning_effort="none"`, and embeddings. The tests use mock modules and do
 not install dependencies or make network/API requests.
 
+## Pinned version and dependencies (recorded 2026-11-24)
+
+- Checkout: `third_party/RAGU` (git-ignored), tag `v0.1.0`, commit
+  `abd3f2958c186dc624bbd42560ad6e1e7033efaf` (2026-09-08), clean working tree. The pin is
+  also in `config/experiment.json`, and every run snapshot checks the checkout against it.
+- Package: `graph_ragu 0.1.0`, `requires-python >=3.10` (classifiers list 3.10 to 3.12).
+  This project currently runs Python 3.14.4, so the install is a real compatibility risk;
+  several dependencies (for example `graspologic-native`, `fastembed`, `lingua-language-detector`,
+  `qdrant-client`, `scikit-learn`) may lack 3.14 Windows wheels. A separate Python 3.12
+  environment for RAGU is the likely path. Not yet attempted.
+- Overlapping pins: `openai>=2.32.0,<3` (project has 2.54.0), `pydantic>=2.11.10,<3` (2.13.4),
+  `networkx>=3.4.2,<4` (3.7).
+- Not installed: `pip list` shows no `graph_ragu`.
+
 ## Installation and Windows considerations
 
 Upstream recommends `uv pip install -e .`; it also documents `pip install

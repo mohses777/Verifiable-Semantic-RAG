@@ -8,6 +8,7 @@ from importlib import import_module
 from time import perf_counter
 from typing import Any, Protocol
 
+from src.core.config import get_llm_settings, validate_environment
 from src.core.models import TextChunk
 from src.knowledge.schemas import ExtractedEntity, ExtractedRelationship, ExtractionResult
 
@@ -20,7 +21,14 @@ class StructuredExtractionProvider(Protocol):
 class OpenAIStructuredExtractionProvider:
     """OpenAI Chat Completions structured-output provider."""
 
-    def __init__(self, *, api_key: str, base_url: str | None = None, client: Any | None = None) -> None:
+    def __init__(
+        self,
+        *,
+        api_key: str,
+        base_url: str | None = None,
+        client: Any | None = None,
+        request_params: dict[str, Any] | None = None,
+    ) -> None:
         if not api_key:
             raise ValueError("OPENAI_API_KEY is required for semantic extraction")
         if client is None:
@@ -30,13 +38,26 @@ class OpenAIStructuredExtractionProvider:
                 raise RuntimeError("OpenAI extraction requires the 'openai' package.") from error
             client = async_openai(api_key=api_key, base_url=base_url)
         self._client = client
+        self._request_params = (
+            dict(request_params) if request_params is not None else get_llm_settings().request_params()
+        )
+        # Measured usage accumulated over every call made by this provider instance.
+        self.total_usage: dict[str, int] = {
+            "calls": 0, "prompt_tokens": 0, "completion_tokens": 0, "total_tokens": 0,
+        }
 
     async def extract(self, *, model: str, messages: list[dict[str, str]], schema: type[ExtractionResult]) -> ExtractionResult:
         response = await self._client.beta.chat.completions.parse(
             model=model,
             messages=messages,
             response_format=schema,
+            **self._request_params,
         )
+        usage = getattr(response, "usage", None)
+        if usage is not None:
+            self.total_usage["calls"] += 1
+            for key in ("prompt_tokens", "completion_tokens", "total_tokens"):
+                self.total_usage[key] += int(getattr(usage, key, 0))
         parsed = response.choices[0].message.parsed
         if parsed is None:
             raise ValueError("OpenAI declined to return structured extraction data")
@@ -64,6 +85,7 @@ class SemanticExtractor:
 
     @classmethod
     def from_environment(cls, provider: StructuredExtractionProvider | None = None) -> "SemanticExtractor":
+        validate_environment()
         active_provider = provider or OpenAIStructuredExtractionProvider(
             api_key=os.environ.get("OPENAI_API_KEY", ""),
             base_url=os.environ.get("OPENAI_BASE_URL"),
