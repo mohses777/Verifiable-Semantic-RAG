@@ -614,3 +614,21 @@ Run QA with mocked providers on sample fixture (zero API calls):
 ```powershell
 python scripts/answer_question.py --mock --papers tests/fixtures/sample_article.pdf --question "How does GraphRAG connect passages?"
 ```
+
+## Commit history note (2026-11-26)
+
+On 2026-11-26 the author rewrote four commit messages on `main` to remove a `Co-Authored-By` attribution line. Only the
+commit messages changed: the files in every commit are byte-identical (verified by comparing git tree hashes), and the
+authors, committers and dates are unchanged. Rewriting a message changes a commit's ID, so earlier records refer to the
+old IDs. Run records in `results/` (field `run_configuration.code.git_commit`) and the docs cite `1a0ca56` as the base
+commit of most experiments; that is the same content as `1068da5`.
+
+| Old commit ID | New commit ID | Commit |
+| --- | --- | --- |
+| `1a0ca56` | `1068da5` | feat: add versioned experiment config, pricing, and run provenance |
+| `a09fe24` | `3537da5` | feat: GraphRAG-Bench comparison of this system and RAGU, with diagnostics and reproducibility tooling |
+| `1161159` | `995c503` | docs: add per-type GraphRAG-Bench results table to README |
+| `03a68d9` | `e13a5a7` | docs: restructure README for submission |
+
+Earlier commits (`733d539` and before) were not changed. Run records were not edited, so they still show the old IDs.
+
